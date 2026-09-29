@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>משפחות אלמוג ווינר · עץ משפחה מסובך</title>
+<title>עץ משפחה</title>
+<meta name="theme-color" content="#1E2B2F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="עץ משפחה">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
@@ -236,6 +243,7 @@ header>*{pointer-events:auto}
 h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:999px;box-shadow:var(--shadow);white-space:nowrap}
 .ctrls{gap:6px;flex-wrap:nowrap;min-width:0}
 .addbtn,.mkbtn{width:36px;height:36px;padding:0;border-radius:50%;font-size:1.25rem;line-height:1;display:grid;place-items:center}
+.empty-state .addbtn{width:auto;height:auto;padding:12px 22px;border-radius:999px;font-size:1.05rem;display:inline-block}
 .srch input{width:150px;padding:8px 14px;font-size:.9rem}
 .seg{padding:3px}
 .seg button{padding:6px 11px;font-size:.88rem}
@@ -1770,6 +1778,8 @@ relayout();
 Object.assign(view,fitTarget());
 let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!selected) viewTarget=fitTarget(); },200); });
 tick();
+// אפליקציה למסך הבית שעובדת בלי אינטרנט (רק כשהדף מוגש מאתר, לא מקובץ מקומי).
+if('serviceWorker' in navigator&&window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
