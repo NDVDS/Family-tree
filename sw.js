@@ -1,7 +1,7 @@
 // עובד בלי אינטרנט: שומר עותק של האפליקציה במכשיר.
 // הנתונים המשפחתיים לא עוברים כאן — הם ב-IndexedDB.
 // לשנות את VERSION בכל עדכון של הקבצים כדי שהמכשיר יוריד את הגרסה החדשה.
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = 'family-tree-' + VERSION;
 const CORE = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 

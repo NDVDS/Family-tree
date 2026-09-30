@@ -649,8 +649,9 @@ for(let g=0;g<=maxG;g++){
 const offs=u=>u.m.map((_,i)=>i*(CW+SG)-u.w/2+CW/2);
 const setX=u=>{ const o=offs(u); u.m.forEach((id,i)=>X[id]=u.cx+o[i]); };
 const midX=un=>un.b?(X[un.a]+X[un.b])/2:X[un.a];
-function pack(units){
-  const s=[...units].sort((a,b)=>a.want-b.want), blocks=[];
+function pack(units,keep){
+  // keep: hold the current left-to-right order (after refine) and only slide units toward their targets
+  const s=[...units].sort(keep?(a,b)=>a.cx-b.cx:(a,b)=>a.want-b.want), blocks=[];
   // siblings take their parents' slots in the order of the children list (oldest first = rightmost)
   const byKey=new Map();
   s.forEach((u,i)=>{ if(u.key!=null){ if(!byKey.has(u.key)) byKey.set(u.key,[]); byKey.get(u.key).push(i); } });
@@ -667,7 +668,7 @@ function pack(units){
   }
   for(const b of blocks){ const left=b.sum/b.n; for(const it of b.items){ it.u.cx=left+it.off+it.u.w/2; setX(it.u); } }
 }
-function down(g,orient){
+function down(g,orient,keep){
   for(const u of rows[g]){
     let best=null;
     for(const flip of orient?[false,true]:[false]){
@@ -681,20 +682,64 @@ function down(g,orient){
     const pus=[...new Set(u.m.map(id=>parentsU(id)).filter(Boolean))];
     if(pus.length===1){ u.key=pus[0].id; u.ord=Math.min(...u.m.map(id=>pus[0].children.indexOf(id)).filter(i=>i>=0)); } else u.key=null;
   }
-  pack(rows[g]);
+  pack(rows[g],keep);
 }
-function up(g){
+function up(g,keep){
   for(const u of rows[g]){
     const t=[];
     for(const id of u.m) for(const un of unionsOf(id)) if(un.a===id&&un.children.length)
       t.push(un.children.reduce((s,c)=>s+X[c],0)/un.children.length-(midX(un)-u.cx));
     u.want=t.length?t.reduce((a,b)=>a+b,0)/t.length:u.cx;
   }
-  pack(rows[g]);
+  pack(rows[g],keep);
+}
+/* fewer crossing lines: try swapping neighbouring families and flipping couples,
+   keep a change only if fewer parent→child lines cross. Siblings keep their order. */
+const layerEdges=g=>{ const E=[]; for(const u of unions){ if(gen[u.a]!==g||!u.children.length) continue; const m=midX(u); for(const c of u.children) if(gen[c]===g+1) E.push(m,X[c]); } return E; };
+const crossings=E=>{ let n=0; for(let i=0;i<E.length;i+=2) for(let j=i+2;j<E.length;j+=2) if((E[i]-E[j])*(E[i+1]-E[j+1])<0) n++; return n; };
+const around=g=>(g>0?crossings(layerEdges(g-1)):0)+crossings(layerEdges(g));
+const swapUnits=(A,B)=>{ const left=Math.min(A.cx-A.w/2,B.cx-B.w/2), right=Math.max(A.cx+A.w/2,B.cx+B.w/2), [L,Rt]=A.cx<B.cx?[A,B]:[B,A];
+  Rt.cx=left+Rt.w/2; L.cx=right-L.w/2; setX(A); setX(B); };
+// place a row compactly in the given order (only the order matters for counting crossings)
+const lineUp=r=>{ let x=0; for(const u of r){ u.cx=x+u.w/2; x+=u.w+GAP; setX(u); } };
+function sift(g){ // move each family to the spot in its row where the fewest lines cross
+  const r=rows[g].slice().sort((a,b)=>a.cx-b.cx); if(r.length<3||r.length>80) return false;
+  const saved=r.map(u=>u.cx); lineUp(r); let best=around(g), moved=false;
+  for(const u of r.slice()){
+    const i0=r.indexOf(u); r.splice(i0,1); let bi=i0, bc=best;
+    for(let k=0;k<=r.length;k++){ if(k===i0) continue; r.splice(k,0,u); lineUp(r); const c=around(g); if(c<bc){ bc=c; bi=k; } r.splice(k,1); }
+    r.splice(bi,0,u); lineUp(r); if(bc<best){ best=bc; moved=true; }
+  }
+  if(!moved){ r.forEach((u,i)=>{ u.cx=saved[i]; setX(u); }); }
+  return moved;
+}
+function refine(){
+  if(ids.length<=200) for(let sweep=0;sweep<2;sweep++){ let m=false; for(let g=0;g<=maxG;g++) m=sift(g)||m; for(let g=maxG;g>=0;g--) m=sift(g)||m; if(!m) break; }
+  for(let sweep=0;sweep<4;sweep++){
+    let better=false;
+    for(let g=0;g<=maxG;g++){
+      const r=rows[g];
+      for(const u of r) if(u.m.length>1){ // flip a couple / chain of spouses
+        const before=around(g); u.m.reverse(); setX(u);
+        if(around(g)<before) better=true; else { u.m.reverse(); setX(u); }
+      }
+      r.sort((a,b)=>a.cx-b.cx);
+      for(let i=0;i+1<r.length;i++){
+        const A=r[i], B=r[i+1]; if(A.key!=null&&A.key===B.key) continue;
+        const before=around(g); swapUnits(A,B);
+        if(around(g)<before){ r[i]=B; r[i+1]=A; better=true; } else swapUnits(A,B);
+      }
+    }
+    if(!better) break;
+  }
 }
 { let x=0; for(const u of rows[0]){ u.want=x+u.w/2; x+=u.w+GAP; } pack(rows[0]); }
 for(let g=1;g<=maxG;g++) down(g,true);
 for(let pass=0;pass<3;pass++){ for(let g=maxG-1;g>=0;g--) up(g); for(let g=1;g<=maxG;g++) down(g,pass<2); }
+if(ids.length<=400){ // heavy for huge trees; the focused view stays well under this
+  refine();
+  for(let pass=0;pass<2;pass++){ for(let g=1;g<=maxG;g++) down(g,false,true); for(let g=maxG-1;g>=0;g--) up(g,true); }
+}
 return {...X};
 };
 const XV=place(CW,SG,GAP), TV={};
