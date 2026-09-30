@@ -45,7 +45,7 @@ h1{font-family:"Frank Ruhl Libre","David","Times New Roman",serif;font-weight:70
 .seg button{border:0;background:none;font:inherit;font-weight:600;color:var(--muted);padding:8px 16px;border-radius:999px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 button:focus-visible,.node:focus-visible,label:focus-within{outline:3px solid var(--male);outline-offset:2px}
-main{position:relative;flex:1;min-height:0}
+main{position:relative;flex:1;min-height:0;overflow:hidden;overflow:clip}
 svg#stage{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;direction:ltr;user-select:none;-webkit-user-select:none}
 svg#stage:active{cursor:grabbing}
 
@@ -166,6 +166,7 @@ select.ask{width:100%;box-shadow:none;background:var(--bg);border:0}
 .empty-state .small{margin:16px 0 0;font-size:.88rem;color:var(--muted)}
 .empty-state .addbtn{font-size:1.05rem;padding:12px 22px}
 .stor{margin:4px 0 0;font-size:.82rem;color:var(--muted);max-width:240px}
+.stor.warn{color:var(--female);font-weight:600}
 .thumb{border:0;padding:0;background:none;cursor:pointer;border-radius:10px}
 .list li.doc{display:flex;gap:6px}
 .list li.doc button[data-doc]{flex:1;min-width:0}
@@ -326,7 +327,9 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
       <label class="dep">דורות סביב האדם במרכז <select id="optDepth"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
       <p class="stor" id="vcount"></p>
       <p class="stor" id="stor"></p>
+      <p class="stor" id="bkinfo"></p>
       <button id="bExport" class="rst plain">שמירת גיבוי לקובץ</button>
+      <p class="stor">בטלפון אפשר לבחור איפה לשמור: קבצים, iCloud, Google Drive או לשלוח לעצמך.</p>
       <label class="rst plain imp">טעינת גיבוי מקובץ<input type="file" id="impIn" accept=".json,application/json"></label>
       <button id="bReset" class="rst" hidden>איפוס כל השינויים שלי</button>
     </div>
@@ -361,7 +364,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
     <h2>העץ שלך עדיין ריק</h2>
     <p>מתחילים מאדם אחד, בדרך כלל מעצמך. אחר כך מוסיפים הורים, בני זוג, ילדים ואחים מתוך הכרטיס של כל אדם.</p>
     <button id="bFirst" class="addbtn">+ הוספת האדם הראשון</button>
-    <p class="small">רוצה לראות קודם איך זה נראה? בחר דוגמה ברשימה "עץ" למעלה.</p>
+    <p class="small">כבר יש לך קובץ גיבוי? טוענים אותו מ־⚙ ← "טעינת גיבוי מקובץ".</p>
   </div>
   <aside id="panel" hidden aria-live="polite"></aside>
 </main>
@@ -374,100 +377,9 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
 
 <script type="module">
 const DATASETS={
-  mine:{title:'העץ שלי',sub:'נשמר רק במכשיר הזה',people:{},unions:[]},
-  complex:{title:'משפחות אלמוג ווינר',sub:'חמישה דורות, נישואין שניים, גירושין, אימוץ, תאומות ובני דודים שנישאו',
-  people:{
-  yaakov:{first:'יעקב',last:'אלמוג',g:'m',born:1920,died:1990,place:'וילנה, ליטא',bio:'התאלמן מלאה ב־1958 כשילדיו היו קטנים, ונישא בשנית לצביה ב־1961. גידל את עמוס, בנה של צביה, כבן לכל דבר.',docs:['תעודת עולה, 1947'],links:['ראיון מוקלט, 1988']},
-  leah:{first:'לאה',last:'אלמוג',maiden:'רוזן',g:'f',born:1923,died:1958,place:'לודז׳, פולין',bio:'נפטרה ממחלה בגיל 35. דניאל ורות גדלו עם התמונה שלה על המזנון.',docs:['מכתבים לאחותה, 1946–1957']},
-  tzvia:{first:'צביה',last:'אלמוג',maiden:'פרידמן',g:'f',born:1930,died:2012,place:'בודפשט, הונגריה',bio:'התאלמנה ממנחם ב־1956 ונישאה ליעקב ב־1961. אמא של עמוס ושל נחמה, ואמא חורגת לדניאל ולרות.'},
-  menachem:{first:'מנחם',last:'ברק',g:'m',born:1926,died:1956,place:'חיפה',bio:'בעלה הראשון של צביה. נהרג במבצע קדש, כשבנו עמוס היה בן ארבע.'},
-  hershel:{first:'הרשל',last:'וינר',g:'m',born:1918,died:1985,place:'קרקוב, פולין',bio:'שען. שניים מילדיו נישאו לשניים מילדי משפחת אלמוג.'},
-  golda:{first:'גולדה',last:'וינר',maiden:'שוורץ',g:'f',born:1921,died:2001,place:'ורשה, פולין',bio:'ניהלה את חנות השעונים אחרי מות הרשל.'},
-  daniel:{first:'דניאל',last:'אלמוג',g:'m',born:1945,place:'תל אביב',bio:'נשוי פעמיים: לאילנה עד 1985, ולמיכל מ־1988. אח חורג של עמוס, שהתחתן עם גרושתו.'},
-  ruth:{first:'רות',last:'וינר',maiden:'אלמוג',g:'f',born:1948,place:'תל אביב',bio:'נישאה לברוך, אחיה של אילנה. כך גם אחיה וגם היא התחתנו עם בני משפחת וינר.'},
-  amos:{first:'עמוס',last:'ברק',g:'m',born:1952,place:'חיפה',bio:'בנם של צביה ומנחם. יעקב גידל אותו מגיל תשע. ב־1987 נישא לאילנה, וכך הפך לאב חורג לאחייניו החורגים.'},
-  nechama:{first:'נחמה',last:'אלמוג',g:'f',born:1962,place:'רמת גן',bio:'אמא יחידנית לאביב. אחות למחצה של דניאל ורות מצד אביה, ושל עמוס מצד אמה.'},
-  baruch:{first:'ברוך',last:'וינר',g:'m',born:1947,place:'ירושלים',bio:'אחיה של אילנה. אבא לשי ולתאומות מאיה ונוי.'},
-  ilana:{first:'אילנה',last:'ברק',maiden:'וינר',g:'f',born:1950,place:'ירושלים',bio:'התגרשה מדניאל ב־1985 ונישאה לעמוס ב־1987. יחד אימצו את טל.',docs:['פסק דין גירושין, 1985','תעודת אימוץ, 1993']},
-  michal:{first:'מיכל',last:'אלמוג',maiden:'דהן',g:'f',born:1960,place:'באר שבע',bio:'אשתו השנייה של דניאל. אמא של עידו ואמא חורגת לאורית ולגיל.'},
-  orit:{first:'אורית',last:'שטרן',maiden:'אלמוג',g:'f',born:1971,place:'תל אביב',bio:'יש לה אבא, אמא, אמא חורגת, אבא חורג, אח למחצה ואחות מאומצת למחצה.'},
-  roi:{first:'רועי',last:'שטרן',g:'m',born:1969,place:'רחובות',bio:'רופא שיניים.'},
-  gil:{first:'גיל',last:'אלמוג',g:'m',born:1974,place:'תל אביב',bio:'נשוי לנוי, בת דודה כפולה שלו: אביו אח של אמה, ואמו אחות של אביה.'},
-  noy:{first:'נוי',last:'אלמוג',maiden:'וינר',g:'f',born:1976,place:'ירושלים',bio:'תאומה של מאיה. נשואה לגיל, בן דוד כפול שלה.'},
-  maya:{first:'מאיה',last:'וינר',g:'f',born:1976,place:'ירושלים',bio:'תאומה של נוי. צלמת, רווקה, והדודה האהובה של כולם.'},
-  shai:{first:'שי',last:'וינר',g:'m',born:1972,place:'ירושלים',bio:'התגרש מדנה ב־2008. רון גר אצל שניהם לסירוגין.'},
-  dana:{first:'דנה',last:'כץ',g:'f',born:1975,place:'הרצליה',bio:'גרושתו של שי. נשארה בקשר טוב עם המשפחה.'},
-  ido:{first:'עידו',last:'אלמוג',g:'m',born:1990,place:'באר שבע',bio:'אח למחצה של אורית וגיל, צעיר מהם ב־16 שנה.'},
-  tal:{first:'טל',last:'ברק',g:'f',born:1992,place:'חיפה',bio:'אומצה בגיל שנה על ידי אילנה ועמוס.'},
-  omer:{first:'עומר',last:'נחום',g:'m',born:1990,place:'עכו',bio:'בעלה של טל.'},
-  aviv:{first:'אביב',last:'אלמוג',g:'m',born:1995,place:'רמת גן',bio:'בנה של נחמה. גדל בלי אבא ידוע.'},
-  noga:{first:'נגה',last:'שטרן',g:'f',born:1998,place:'רחובות',bio:'אמא של אריאל, הנין הראשון במשפחה.'},
-  itamar:{first:'איתמר',last:'גבאי',g:'m',born:1997,place:'נתניה',bio:'בעלה של נגה.'},
-  yoav:{first:'יואב',last:'שטרן',g:'m',born:2001,place:'רחובות',bio:'סטודנט להנדסה.'},
-  ron:{first:'רון',last:'וינר',g:'m',born:2000,place:'הרצליה',bio:'הוריו התגרשו כשהיה בן שמונה.'},
-  ella:{first:'אלה',last:'אלמוג',g:'f',born:2003,place:'תל אביב',bio:'שני הסבים שלה מצד אבא הם אחים של שני הסבים שלה מצד אמא.'},
-  lia:{first:'ליה',last:'נחום',g:'f',born:2021,place:'עכו',bio:'נכדה של אילנה ועמוס דרך טל.'},
-  ariel:{first:'אריאל',last:'גבאי',g:'m',born:2024,place:'נתניה',bio:'דור חמישי במשפחה.'}
-  },
-  unions:[
-  {id:'u1',a:'yaakov',b:'leah',year:1943,end:'death',endYear:1958,children:['daniel','ruth']},
-  {id:'u2',a:'yaakov',b:'tzvia',year:1961,children:['nechama']},
-  {id:'u3',a:'tzvia',b:'menachem',year:1950,end:'death',endYear:1956,children:['amos']},
-  {id:'u4',a:'hershel',b:'golda',year:1945,children:['baruch','ilana']},
-  {id:'u5',a:'daniel',b:'ilana',year:1970,end:'divorce',endYear:1985,children:['orit','gil']},
-  {id:'u6',a:'daniel',b:'michal',year:1988,children:['ido']},
-  {id:'u7',a:'ilana',b:'amos',year:1987,children:['tal'],adopted:['tal']},
-  {id:'u8',a:'ruth',b:'baruch',year:1971,children:['shai','maya','noy']},
-  {id:'u9',a:'nechama',b:null,children:['aviv']},
-  {id:'u10',a:'orit',b:'roi',year:1995,children:['noga','yoav']},
-  {id:'u11',a:'gil',b:'noy',year:2001,children:['ella']},
-  {id:'u12',a:'shai',b:'dana',year:1998,end:'divorce',endYear:2008,children:['ron']},
-  {id:'u13',a:'tal',b:'omer',year:2018,children:['lia']},
-  {id:'u14',a:'noga',b:'itamar',year:2022,children:['ariel']}
-]}
+  mine:{title:'העץ שלי',sub:'נשמר רק במכשיר הזה',people:{},unions:[]}
 };
-function makeStress(N=2000){
-  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return (seed-1)/2147483646; };
-  const pick=a=>a[Math.floor(rnd()*a.length)];
-  const M=['אברהם','יצחק','יעקב','משה','אהרן','דוד','שלמה','יוסף','בנימין','שמואל','אליהו','חיים','מרדכי','נחום','דניאל','יהודה','מאיר','צבי','עמוס','גדעון','אורי','נועם','איתי','יונתן','עידו','רועי','אריאל','עומר','תומר','אליאב'];
-  const F=['שרה','רבקה','רחל','לאה','מרים','חנה','אסתר','דבורה','רות','נעמי','יהודית','צביה','מלכה','שושנה','אורה','תמר','מיכל','נועה','יעל','שירה','הדס','אביגיל','טליה','נגה','מאיה','ליה','אלה','הילה','רוני','אורית'];
-  const L=['כהן','לוי','מזרחי','פרץ','ביטון','אברהם','פרידמן','שפירא','גולן','דהן','אזולאי','בן דוד','רוזן','קליין','חדד','אוחיון','גבאי','יוסף','נחום','ברק','שטרן','וינר','עמר','סויסה','אלמוג'];
-  const people={}, unions=[]; let n=0, un=0;
-  const mk=(g,last,born)=>{
-    const id='s'+(n++);
-    let died=born<1945?born+55+Math.floor(rnd()*40):(born<1962&&rnd()<.25?born+58+Math.floor(rnd()*20):undefined);
-    if(died&&died>2025) died=undefined;
-    people[id]={first:pick(g==='m'?M:F),last,g,born,died,place:undefined}; return id;
-  };
-  let wave=[];
-  for(let i=0;i<10;i++){
-    const b=1840+Math.floor(rnd()*15), h=mk('m',L[i],b), w=mk('f',L[i],b+Math.floor(rnd()*6)-1);
-    people[w].maiden=pick(L); const u={id:'su'+(un++),a:h,b:w,year:b+22,children:[]}; unions.push(u); wave.push(u);
-  }
-  while(n<N&&wave.length){
-    const next=[];
-    for(const u of wave){
-      if(n>=N) break;
-      const A=people[u.a], B=people[u.b], fam=A.g==='m'?A.last:B.last;
-      let cb=Math.max(A.born,B.born)+20+Math.floor(rnd()*6); const k=2+Math.floor(rnd()*5);
-      for(let c=0;c<k&&n<N&&cb<=2024;c++){
-        const g=rnd()<.5?'m':'f', id=mk(g,fam,cb); u.children.push(id); cb+=1+Math.floor(rnd()*4);
-        if(people[id].born<1998&&rnd()<.82&&n<N){
-          const sp=mk(g==='m'?'f':'m',pick(L),people[id].born+Math.floor(rnd()*7)-3);
-          if(g==='m'){ people[sp].maiden=people[sp].last; people[sp].last=fam; } else { people[id].maiden=fam; people[id].last=people[sp].last; }
-          const nu={id:'su'+(un++),a:id,b:sp,year:people[id].born+21+Math.floor(rnd()*6),children:[]};
-          if(rnd()<.06){ nu.end='divorce'; nu.endYear=nu.year+5+Math.floor(rnd()*10); }
-          unions.push(nu); next.push(nu);
-        }
-      }
-    }
-    wave=next;
-  }
-  const all=Object.keys(people), mid=all.filter(i=>people[i].born>1900&&unions.some(x=>x.children.includes(i))&&unions.some(x=>(x.a===i||x.b===i)&&x.children.length));
-  return {title:`עץ בדיקה · ${all.length.toLocaleString('en')} איש`,people,unions,focus:mid[Math.floor(mid.length/2)]||all[0]};
-}
-const DKEY=location.hash==='#stress'?'stress':location.hash==='#complex'?'complex':'mine';
-if(DKEY==='stress') DATASETS.stress=makeStress();
+const DKEY='mine';
 const D=DATASETS[DKEY];
 const people=D.people, unions=D.unions, ALLU=unions;
 for (const p of Object.values(people)){ p.docs=p.docs||[]; p.links=p.links||[]; p.photos=[]; }
@@ -612,9 +524,34 @@ if(savedTree&&savedTree.people){
   addLog=addLog.filter(applyAny);          // changes kept by the earlier version of the demo
   if(addLog.length){ hasSaved=true; migrate=true; }
 }
+/* ---------- backup reminder ---------- */
+// מתי נשמר גיבוי לאחרונה ומתי העץ השתנה, כדי להזכיר לשמור גיבוי לפני שהעץ ילך לאיבוד.
+const BKKEY='ft-backup', BKDAYS=14, DAY=864e5;
+let bk={last:0,changed:0}; try{ Object.assign(bk,JSON.parse(localStorage.getItem(BKKEY)||'{}')); }catch(e){}
+if(!bk.changed&&savedTree&&savedTree.savedAt) bk.changed=savedTree.savedAt;
+function saveBk(){ try{ localStorage.setItem(BKKEY,JSON.stringify(bk)); }catch(e){} updateBkInfo(); }
+function updateBkInfo(){
+  const el=document.getElementById('bkinfo'); if(!el) return;
+  if(!ids.length){ el.textContent=''; el.classList.remove('warn'); return; }
+  if(!bk.last){ el.textContent='עדיין לא נשמר גיבוי של העץ.'; el.classList.add('warn'); return; }
+  const d=Math.floor((Date.now()-bk.last)/DAY), dirty=bk.changed>bk.last;
+  el.textContent='גיבוי אחרון: '+(d<1?'היום':d===1?'אתמול':`לפני ${d} ימים`)+(dirty?' · יש שינויים שלא נשמרו בגיבוי':'');
+  el.classList.toggle('warn',dirty&&d>=BKDAYS);
+}
+function needBackup(){
+  if(!ids.length||!(bk.changed>bk.last)) return false;
+  return bk.last?Date.now()-bk.last>BKDAYS*DAY:ids.length>=5;
+}
+let reminded=false;
+function maybeRemind(){
+  if(reminded||!needBackup()||!document.getElementById('dlg').hidden) return;
+  reminded=true;
+  toast(bk.last?'עבר זמן מאז הגיבוי האחרון. כדאי לשמור גיבוי חדש.':'כדאי לשמור גיבוי של העץ, כדי שלא ילך לאיבוד.','שמירת גיבוי',()=>doExport());
+}
+
 let saveT=null, warned=false, persistAsked=false;
 function saveState(){
-  hasSaved=true; document.getElementById('bReset').hidden=false;
+  hasSaved=true; bk.changed=Date.now(); saveBk(); document.getElementById('bReset').hidden=false;
   clearTimeout(saveT);
   saveT=setTimeout(async()=>{
     if(!db){ if(!warned){ warned=true; toast('הדפדפן הזה לא מאפשר שמירה, והשינויים יאבדו ברענון.'); } return; }
@@ -631,6 +568,7 @@ async function updateUsage(){
   let mb='';
   try{ const e=await navigator.storage.estimate(); if(e&&e.usage!=null) mb=` · ${(e.usage/1048576).toFixed(1)} מ״ב`; }catch(e){}
   el.textContent=hasSaved?`השינויים שמורים במכשיר הזה${mb}`:'עדיין אין שינויים. כל שינוי יישמר במכשיר הזה.';
+  updateBkInfo();
 }
 
 /* ---------- layout (recomputed whenever someone is added) ---------- */
@@ -917,7 +855,7 @@ function physics(){
 }
 /* ---------- view: pan & zoom ---------- */
 const view={x:0,y:0,k:1}; let viewTarget=null, autoFit=0;
-const clampK=k=>Math.min(2.5,Math.max(.25,k));
+const clampK=k=>Math.min(2.5,Math.max(.08,k));
 const panelEl=document.getElementById('panel'), mainEl=document.getElementById('main');
 const isDesk=()=>matchMedia('(min-width:760px)').matches;
 function visibleBox(){
@@ -1696,19 +1634,28 @@ updateUsage();
 const bExport=document.getElementById('bExport'), impIn=document.getElementById('impIn');
 let dlApi=null;
 if(window.claude&&window.claude.use) window.claude.use('downloads').then(x=>{ dlApi=x; }).catch(()=>{});
-bExport.onclick=async()=>{
+async function doExport(){
   if(!ids.length){ toast('העץ ריק, אין מה לגבות.'); return; }
   const d=new Date(), stamp=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const name=`family-tree-backup-${stamp}.json`;
   const json=JSON.stringify({format:'family-tree-backup',version:1,exportedAt:d.toISOString(),people,unions});
   const blob=new Blob([json],{type:'application/json'});
+  const done=()=>{ bk.last=Date.now(); saveBk(); toast('הגיבוי נשמר.'); };
   if(dlApi){
-    try{ await dlApi.save({filename:`family-tree-backup-${stamp}.json`,data:blob}); toast('הגיבוי נשמר.'); }
+    try{ await dlApi.save({filename:name,data:blob}); done(); }
     catch(e){ if(e&&e.code==='declined') return; toast('לא הצלחתי לשמור את הקובץ. נסה שוב בעוד רגע.'); }
-  } else {
-    try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`family-tree-backup-${stamp}.json`; document.body.appendChild(a); a.click(); a.remove(); }
-    catch(e){ toast('שמירת קובץ לא זמינה כאן.'); }
+    return;
   }
-};
+  // בטלפון: תפריט השיתוף, כדי לשמור לקבצים / iCloud / Google Drive או לשלוח לעצמך.
+  let file=null; try{ file=new File([blob],name,{type:'application/json'}); }catch(e){}
+  if(file&&matchMedia('(pointer:coarse)').matches&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:'גיבוי עץ משפחה'}); done(); return; }
+    catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  try{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); done(); }
+  catch(e){ toast('שמירת קובץ לא זמינה כאן.'); }
+}
+bExport.onclick=doExport;
 let pendingImport=null;
 impIn.onchange=e=>{
   const f=e.target.files[0]; impIn.value=''; if(!f) return;
@@ -1741,7 +1688,7 @@ function submitImport(){
   unions.length=0; unions.push(...data.unions.map(u=>({...u,children:(u.children||[]).filter(c=>people[c]),adopted:u.adopted||[]})));
   ids.length=0; ids.push(...Object.keys(people));
   selected=null; trace=null; focusId=null; panelEl.hidden=true; mainEl.classList.remove('open');
-  saveState(); closeAdd(); removeStale(); relayout(); autoFit=45;
+  saveState(); bk.last=bk.changed; saveBk(); closeAdd(); removeStale(); relayout(); autoFit=45;
   toast(`הגיבוי נטען: ${ids.length.toLocaleString('en')} אנשים.`);
 }
 bReset.onclick=async()=>{
@@ -1778,6 +1725,8 @@ relayout();
 Object.assign(view,fitTarget());
 let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!selected) viewTarget=fitTarget(); },200); });
 tick();
+setTimeout(maybeRemind,4000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(maybeRemind,1500); });
 // אפליקציה למסך הבית שעובדת בלי אינטרנט (רק כשהדף מוגש מאתר, לא מקובץ מקומי).
 if('serviceWorker' in navigator&&window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
