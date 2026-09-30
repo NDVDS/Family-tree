@@ -129,6 +129,16 @@ select.ask{width:100%;box-shadow:none;background:var(--bg);border:0}
   #panel[hidden]{transform:translateY(110%)}
   main.open .legend,main.open .lgbtn{display:none}
 }
+/* phones: the card is a sheet that can be collapsed to a thin strip so the tree stays visible */
+.grab{display:none}
+@media (max-width:759px){
+  #panel{--peek:110px;padding-top:30px}
+  .grab{display:block;position:absolute;top:0;left:0;right:0;height:30px;border:0;background:none;cursor:pointer;padding:0}
+  .grab::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:var(--line);opacity:.7;margin:10px auto 0}
+  #panel .close{top:26px}
+  #panel.peek:not([hidden]){transform:translateY(calc(100% - var(--peek) - env(safe-area-inset-bottom,0px)));overflow:hidden}
+  #panel.peek .ph{cursor:pointer}
+}
 @media (prefers-reduced-motion:reduce){#panel,.node,.u,.card,.bub{transition:none}}
 .close{position:absolute;inset-inline-end:12px;top:12px;width:36px;height:36px;border-radius:50%;border:0;background:var(--bg);color:var(--ink);font-size:1.2rem;cursor:pointer}
 .ph{display:flex;gap:14px;align-items:center;margin-inline-end:40px}
@@ -880,11 +890,12 @@ const view={x:0,y:0,k:1}; let viewTarget=null, autoFit=0;
 const clampK=k=>Math.min(2.5,Math.max(.08,k));
 const panelEl=document.getElementById('panel'), mainEl=document.getElementById('main');
 const isDesk=()=>matchMedia('(min-width:760px)').matches;
+const PEEK=110;
 function visibleBox(){
   const r=svg.getBoundingClientRect(), hh=document.querySelector('header').offsetHeight; let x0=0,y0=hh,w=r.width,h=r.height-hh;
   if(!panelEl.hidden){
     // on wide screens the panel sits on the left (RTL), on phones at the bottom
-    if(isDesk()){ w-=364; x0=364; } else { h=Math.max(160,h-panelEl.getBoundingClientRect().height); }
+    if(isDesk()){ w-=364; x0=364; } else { h=Math.max(160,h-(panelEl.classList.contains('peek')?PEEK:panelEl.getBoundingClientRect().height)); }
   }
   return {x0,y0,w,h};
 }
@@ -1008,13 +1019,35 @@ function select(id,center){
   if(!isAll()&&(focusId!==id||forceVis)){ focusId=id; forceVis=null; selected=id; trace=null; relayout(); center=true; }
   else if(forceVis){ forceVis=null; }
   selected=id; trace=null; highlight(); renderPanel();
-  panelEl.hidden=false; mainEl.classList.add('open');
-  requestAnimationFrame(()=>{
-    // להראות את כל הענף המודגש (אחים, הורים, סבים) ולא רק את האדם
-    const fam=[...lineage(id).s].filter(x=>pos[x]&&VS.has(x));
-    if(fam.length>1){ if(center||!fam.every(inView)) viewTarget=fitTarget(fam,Math.max(view.k,.9)); }
-    else if(center||!inView(id)) centerOn(id);
-  });
+  panelEl.classList.toggle('peek',sheetPeek); panelEl.hidden=false; mainEl.classList.add('open');
+  requestAnimationFrame(()=>fitSel(id,center));
+}
+// להראות את כל הענף המודגש (אחים, הורים, סבים) ולא רק את האדם
+function fitSel(id,center){
+  const fam=[...lineage(id).s].filter(x=>pos[x]&&VS.has(x));
+  if(fam.length>1){ if(center||!fam.every(inView)) viewTarget=fitTarget(fam,Math.max(view.k,.9)); }
+  else if(center||!inView(id)) centerOn(id);
+}
+// בטלפון: הכרטיס נפתח מכווץ לפס עם השם, ונמשך למעלה לפרטים המלאים. הבחירה האחרונה נזכרת.
+let sheetPeek=true; try{ sheetPeek=localStorage.getItem('ft-sheet')!=='open'; }catch(e){}
+function setPeek(v){
+  sheetPeek=v; try{ localStorage.setItem('ft-sheet',v?'peek':'open'); }catch(e){}
+  panelEl.classList.toggle('peek',v); if(v) panelEl.scrollTop=0;
+  const g=panelEl.querySelector('.grab'); if(g){ g.setAttribute('aria-expanded',String(!v)); g.setAttribute('aria-label',v?'הצגת כל הפרטים':'הקטנת הכרטיס'); }
+  if(selected&&!isDesk()) requestAnimationFrame(()=>fitSel(selected,true));
+}
+{ // swipe up / down on the sheet
+  let sy=null;
+  panelEl.addEventListener('touchstart',e=>{
+    if(isDesk()) return;
+    const onTop=e.target.closest('.grab,.ph');
+    sy=(onTop||panelEl.classList.contains('peek')||panelEl.scrollTop<=0)?e.touches[0].clientY:null;
+  },{passive:true});
+  panelEl.addEventListener('touchend',e=>{
+    if(sy==null) return; const dy=e.changedTouches[0].clientY-sy; sy=null;
+    if(dy<-35&&sheetPeek) setPeek(false);
+    else if(dy>35&&!sheetPeek&&panelEl.scrollTop<=0) setPeek(true);
+  },{passive:true});
 }
 function inView(id){
   const v=visibleBox(), p=pos[id], sx=p.x*view.k+view.x, sy=p.y*view.k+view.y;
@@ -1067,6 +1100,7 @@ function renderPanel(){
   const opts=ids.filter(x=>x!==id).sort((x,y)=>people[x].first.localeCompare(people[y].first,'he')).map(x=>`<option value="${x}">${esc(fullName(people[x]))}</option>`).join('');
   const big=p.photos[0]?`<img src="${p.photos[0]}" alt="">`:esc(p.first[0]);
   panelEl.innerHTML=`
+    <button class="grab" aria-expanded="${!sheetPeek}" aria-label="${sheetPeek?'הצגת כל הפרטים':'הקטנת הכרטיס'}"></button>
     <button class="close" aria-label="סגירה">✕</button>
     <div class="ph"><div class="big ${p.g}">${big}</div>
       <div><h2>${esc(fullName(p))}</h2>
@@ -1093,6 +1127,8 @@ function renderPanel(){
     <h3>קישורים</h3>
     ${p.links.length?`<ul class="list">${p.links.map(d=>`<li><button data-stub>🔗 ${esc(d)}</button></li>`).join('')}</ul>`:'<p class="empty">עדיין אין קישורים.</p>'}`;
   panelEl.querySelector('.close').onclick=deselect;
+  panelEl.querySelector('.grab').onclick=()=>setPeek(!sheetPeek);
+  panelEl.querySelector('.ph').onclick=()=>{ if(sheetPeek&&!isDesk()) setPeek(false); };
   panelEl.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openAdd(b.dataset.add,id));
   panelEl.querySelectorAll('[data-kid]').forEach(b=>b.onclick=()=>addToCouple(b.dataset.kid));
   panelEl.querySelector('[data-link]').onclick=()=>openLink(id);
