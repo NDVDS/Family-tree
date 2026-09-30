@@ -297,6 +297,13 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
 .kg input:focus-visible+span{outline:2px solid var(--male)}
 .kx{border:0;background:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:6px}
 .opts{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.ordbox{margin:0 0 14px}
+.ordbox h4{margin:0 0 6px;font-size:.95rem;color:var(--muted);font-weight:600}
+.ord{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:6px}
+.ord li{display:flex;align-items:center;gap:6px;background:var(--bg);padding:8px 10px;border-radius:10px}
+.ord li span{flex:1}
+.ord li small{color:var(--muted)}
+.ord li .mini{font-size:.95rem;padding:4px 12px}
 .opts legend{font-size:.88rem;font-weight:600;color:var(--muted);margin-bottom:4px}
 #fAdd .opts label{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-size:1rem;background:var(--bg);padding:10px 12px;border-radius:10px;cursor:pointer}
 #fAdd .opts label small{color:var(--muted)}
@@ -394,6 +401,9 @@ const parentsU = id => unions.find(u=>u.children.includes(id));
 const parentsOf = id => { const u=parentsU(id); return u?[u.a,u.b].filter(Boolean):[]; };
 const fullName = p => p.first+' '+p.last;
 const years = p => p.born&&p.died ? `${p.born}–${p.died}` : p.born ? (p.g==='f'?'נולדה ':'נולד ')+p.born : p.died ? (p.g==='f'?'נפטרה ':'נפטר ')+p.died : 'שנת לידה לא ידועה';
+// סדר הילדים: לפי גיל, אלא אם המשתמש סידר ידנית (u.manual). הראשון ברשימה מוצג הכי ימינה.
+function sortKids(u){ if(!u.manual) u.children.sort((x,y)=>bornOf(x)-bornOf(y)); }
+function byAge(list){ return list.slice().sort((x,y)=>bornOf(x)-bornOf(y)); }
 function bornOf(id,depth=0){
   const p=people[id]; if(p.born) return p.born; if(depth>4) return 1950;
   const par=parentsOf(id).map(x=>bornOf(x,depth+1)); if(par.length) return Math.max(...par)+28;
@@ -482,13 +492,14 @@ function applyOp(op){
     else u=unions.find(x=>x.a===t&&!x.b);
     if(!u){ u={id:'u_'+id,a:t,b:null,children:[],adopted:[]}; unions.push(u); }
     u.children.push(id); if(op.adopted) u.adopted.push(id);
-    u.children.sort((x,y)=>bornOf(x)-bornOf(y));
+    sortKids(u);
   }
   return true;
 }
 function applyEdit(op){
   const p=people[op.id]; if(!p) return false;
   for(const k of ['first','last','maiden','g','born','died','place','bio']) p[k]=op.person[k];
+  const pu=parentsU(op.id); if(pu) sortKids(pu);
   return true;
 }
 function dropUnion(u){ const i=unions.indexOf(u); if(i>=0) unions.splice(i,1); }
@@ -524,6 +535,7 @@ if(savedTree&&savedTree.people){
   addLog=addLog.filter(applyAny);          // changes kept by the earlier version of the demo
   if(addLog.length){ hasSaved=true; migrate=true; }
 }
+for(const u of unions) sortKids(u);
 /* ---------- backup reminder ---------- */
 // מתי נשמר גיבוי לאחרונה ומתי העץ השתנה, כדי להזכיר לשמור גיבוי לפני שהעץ ילך לאיבוד.
 const BKKEY='ft-backup', BKDAYS=14, DAY=864e5;
@@ -619,6 +631,10 @@ const setX=u=>{ const o=offs(u); u.m.forEach((id,i)=>X[id]=u.cx+o[i]); };
 const midX=un=>un.b?(X[un.a]+X[un.b])/2:X[un.a];
 function pack(units){
   const s=[...units].sort((a,b)=>a.want-b.want), blocks=[];
+  // siblings take their parents' slots in the order of the children list (oldest first = rightmost)
+  const byKey=new Map();
+  s.forEach((u,i)=>{ if(u.key!=null){ if(!byKey.has(u.key)) byKey.set(u.key,[]); byKey.get(u.key).push(i); } });
+  for(const idx of byKey.values()) if(idx.length>1){ const us=idx.map(i=>s[i]).sort((a,b)=>a.ord-b.ord); idx.forEach((i,k)=>s[i]=us[k]); }
   for(const u of s){
     blocks.push({items:[{u,off:0}],w:u.w,sum:u.want-u.w/2,n:1});
     while(blocks.length>1){
@@ -642,6 +658,8 @@ function down(g,orient){
       if(!best||cost<best.cost) best={m,want,cost};
     }
     u.m=best.m; u.want=best.want;
+    const pus=[...new Set(u.m.map(id=>parentsU(id)).filter(Boolean))];
+    if(pus.length===1){ u.key=pus[0].id; u.ord=Math.min(...u.m.map(id=>pus[0].children.indexOf(id)).filter(i=>i>=0)); } else u.key=null;
   }
   pack(rows[g]);
 }
@@ -1022,7 +1040,7 @@ function renderPanel(){
     if(myU.filter(x=>x.children.length).length>1&&other(u,id)) n.push('עם '+people[other(u,id)].first);
     kids.push(chip(c,n.join(', ')));
   }
-  if(kids.length) rows.push(['ילדים',kids.join('')]);
+  if(kids.length) rows.push(['ילדים',kids.join('')+(myU.some(u=>u.children.length>1)?'<button class="mini" data-order>סידור</button>':'')]);
   const sibs=pu?pu.children.filter(c=>c!==id):[];
   if(sibs.length) rows.push(['אחים',sibs.map(c=>chip(c,p.born&&people[c].born===p.born?(people[c].g==='f'?'תאומה':'תאום'):'')).join('')]);
   if(halves.length) rows.push(['אחים למחצה',halves.map(c=>{ const cp=parentsU(c); return chip(c,cp.adopted.includes(c)?'מאומצת':''); }).join('')]);
@@ -1068,6 +1086,7 @@ function renderPanel(){
   panelEl.querySelector('[data-kids]').onclick=()=>openKids(id);
   const bMk=panelEl.querySelector('[data-movekids]'); if(bMk) bMk.onclick=()=>openMoveKids(id);
   const bPar=panelEl.querySelector('[data-par]'); if(bPar) bPar.onclick=()=>openParents(id);
+  const bOrd=panelEl.querySelector('[data-order]'); if(bOrd) bOrd.onclick=()=>openOrder(id);
   panelEl.querySelector('[data-edit]').onclick=()=>openAdd('edit',id);
   panelEl.querySelector('[data-del]').onclick=()=>openDelete(id);
   panelEl.querySelectorAll('[data-trace]').forEach(b=>b.onclick=()=>traceKin(id,b.dataset.trace));
@@ -1370,7 +1389,6 @@ function describe(id){
 function isAncestor(a,b){ const st=[b], seen=new Set(); while(st.length){ const x=st.pop(); for(const p of parentsOf(x)){ if(p===a) return true; if(!seen.has(p)){ seen.add(p); st.push(p); } } } return false; }
 const unionBetween=(a,b)=>unions.find(u=>(u.a===a&&u.b===b)||(u.a===b&&u.b===a));
 const newUid=()=>'u_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const sortKids=u=>u.children.sort((x,y)=>bornOf(x)-bornOf(y));
 function linkParent(child,parent,withId,adopted){
   const C=people[child].first, P=people[parent].first;
   if(child===parent) return 'אי אפשר לחבר אדם לעצמו.';
@@ -1572,6 +1590,42 @@ function submitMoveKids(){
   saveState(); closeAdd(); relayout(); select(P,true);
   toast(ks.length>1?`${ks.length} ילדים שויכו ל${coupleName(u)}.`:`${people[ks[0]].first} ${people[ks[0]].g==='f'?'שויכה':'שויך'} ל${coupleName(u)}.`);
 }
+/* ---------- arranging the order of children ---------- */
+function openOrder(P){
+  lastFocus=document.activeElement; dlgMode='order'; dlgFixed={rel:'order',target:P};
+  const us=unionsOf(P).filter(u=>u.children.length>1);
+  document.getElementById('dlgT').textContent=`סידור הילדים של ${people[P].first}`;
+  const li=c=>`<li data-c="${c}"><span>${esc(fullName(people[c]))}${people[c].born?` <small>${people[c].born}</small>`:''}</span>
+    <button type="button" class="mini" data-mv="-1" aria-label="להזיז את ${esc(people[c].first)} קדימה">▲</button><button type="button" class="mini" data-mv="1" aria-label="להזיז את ${esc(people[c].first)} אחורה">▼</button></li>`;
+  fAdd.innerHTML=`<p class="note">הראשון ברשימה מופיע בעץ הכי ימינה.</p>
+    ${us.map(u=>`<div class="ordbox" data-u="${u.id}">${us.length>1&&other(u,P)?`<h4>עם ${esc(people[other(u,P)].first)}</h4>`:''}
+      <ol class="ord">${u.children.map(li).join('')}</ol>
+      <button type="button" class="mini" data-age>סידור לפי גיל</button></div>`).join('')}
+    <div class="acts"><button type="submit" class="pri">שמירה</button><button type="button" class="sec" data-cancel>ביטול</button></div>`;
+  fAdd.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
+    const it=b.closest('li'), d=+b.dataset.mv, sib=d<0?it.previousElementSibling:it.nextElementSibling;
+    if(!sib) return; d<0?sib.before(it):sib.after(it); b.focus();
+  });
+  fAdd.querySelectorAll('[data-age]').forEach(b=>b.onclick=()=>{
+    const ol=b.parentElement.querySelector('ol'), items=[...ol.children], by=byAge(items.map(x=>x.dataset.c));
+    for(const c of by) ol.appendChild(items.find(x=>x.dataset.c===c));
+  });
+  fAdd.querySelector('[data-cancel]').onclick=closeAdd;
+  dlg.hidden=false; document.body.classList.add('modal');
+  setTimeout(()=>fAdd.querySelector('[data-mv]').focus(),30);
+}
+function submitOrder(){
+  const P=dlgFixed.target;
+  for(const box of fAdd.querySelectorAll('.ordbox')){
+    const u=unions.find(x=>x.id===box.dataset.u); if(!u) continue;
+    const order=[...box.querySelectorAll('li')].map(x=>x.dataset.c);
+    u.children=order;
+    const auto=byAge(order);
+    if(order.every((c,i)=>c===auto[i])) delete u.manual; else u.manual=true;
+  }
+  saveState(); closeAdd(); relayout(); select(P,true);
+  toast('סדר הילדים נשמר.');
+}
 function tapNode(id){
   if(pickCb){ const cb=pickCb; pickCb=null; cb(id); return; }
   select(id,false);
@@ -1589,6 +1643,7 @@ fAdd.addEventListener('submit',e=>{
   if(dlgMode==='parents'){ submitParents(); return; }
   if(dlgMode==='movekids'){ submitMoveKids(); return; }
   if(dlgMode==='import'){ submitImport(); return; }
+  if(dlgMode==='order'){ submitOrder(); return; }
   const F=fAdd.elements, err=fAdd.querySelector('.err'), {rel,target}=curRel();
   const fail=m=>{ err.textContent=m; };
   const first=F.first.value.trim(), g=(fAdd.querySelector('input[name="g"]:checked')||{}).value;
@@ -1687,6 +1742,7 @@ function submitImport(){
   for(const p of Object.values(people)){ p.docs=p.docs||[]; p.links=p.links||[]; p.photos=p.photos||[]; }
   unions.length=0; unions.push(...data.unions.map(u=>({...u,children:(u.children||[]).filter(c=>people[c]),adopted:u.adopted||[]})));
   ids.length=0; ids.push(...Object.keys(people));
+  for(const u of unions) sortKids(u);
   selected=null; trace=null; focusId=null; panelEl.hidden=true; mainEl.classList.remove('open');
   saveState(); bk.last=bk.changed; saveBk(); closeAdd(); removeStale(); relayout(); autoFit=45;
   toast(`הגיבוי נטען: ${ids.length.toLocaleString('en')} אנשים.`);
