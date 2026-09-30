@@ -80,6 +80,7 @@ svg#stage:active{cursor:grabbing}
 .u{transition:opacity .3s}
 .kids{fill:none;stroke:hsl(var(--h,200) 40% 45%);stroke-width:2.3;stroke-linejoin:round}
 .kc{fill:none;stroke:var(--bg);stroke-width:8;stroke-linejoin:round}
+.kids.rest{opacity:.18}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kids,:root:not([data-theme="light"]) .kids-ad{stroke:hsl(var(--h,200) 50% 70%)}}
 :root[data-theme="dark"] .kids,:root[data-theme="dark"] .kids-ad{stroke:hsl(var(--h,200) 50% 70%)}
 body.no-fam .kids,body.no-fam .kids-ad{stroke:var(--line)!important}
@@ -784,8 +785,8 @@ function buildLinks(){
     if(!linkEl[u.id]){
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
       g.innerHTML=`<path class="kc"/><path class="kids"/><path class="kids-ad"/><path class="mar-o"/><path class="mar-i"/>
-        <g class="uadd" data-u="${u.id}" role="button" tabindex="0"><circle class="hit" r="17"/><circle class="bg" r="10"/><path d="M-4.5,0H4.5M0,-4.5V4.5"/></g>`;
-      gLinks.appendChild(g); linkEl[u.id]={g,kc:g.children[0],kids:g.children[1],ad:g.children[2],mo:g.children[3],mi:g.children[4],badge:g.children[5]};
+        <g class="uadd" data-u="${u.id}" role="button" tabindex="0"><circle class="hit" r="17"/><circle class="bg" r="10"/><path d="M-4.5,0H4.5M0,-4.5V4.5"/></g><path class="kids rest"/>`;
+      gLinks.appendChild(g); linkEl[u.id]={g,kc:g.children[0],kids:g.children[1],ad:g.children[2],mo:g.children[3],mi:g.children[4],badge:g.children[5],rest:g.children[6]};
       g.children[5].addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); addToCouple(u.id); } });
     }
     const g=linkEl[u.id].g, dim=g.classList.contains('dim'), bd=linkEl[u.id].badge;
@@ -818,21 +819,24 @@ function drawLinks(){
     const mar=b?`M${a.x},${a.y}L${b.x},${b.y}`:'';
     L.mo.setAttribute('d',mar); L.mi.setAttribute('d',mar);
     const mx=b?(a.x+b.x)/2:a.x, my=b?(a.y+b.y)/2:a.y;
-    let d='', dd='';
-    const allAd=u.children.every(c=>u.adopted.includes(c));
+    let d='', dd='', rd='';
+    const keep=hlKids&&hlKids.get(u.id), main=keep?u.children.filter(c=>keep.has(c)):u.children, rest=keep?u.children.filter(c=>!keep.has(c)):[];
+    const allAd=main.every(c=>u.adopted.includes(c));
     if(u.children.length){
       if(mode!=='bubble'){
         const sy=b?my:my+34, cy=Math.min(...u.children.map(c=>pos[c].y));
         const bar=mode==='time'?Math.min(Math.max(a.y,b?b.y:a.y)+46+Math.min(lane[u.id]||0,4)*13,cy-44):my+(cy-my)*(.3+(lane[u.id]||0)*.1);
-        const xs=u.children.map(c=>pos[c].x).concat(mx);
+        const xs=main.map(c=>pos[c].x).concat(mx);
         const stem=`M${mx},${sy}V${bar}M${Math.min(...xs)},${bar}H${Math.max(...xs)}`;
         if(allAd) dd+=stem; else d+=stem;
-        for(const c of u.children){ const seg=`M${pos[c].x},${bar}V${pos[c].y-34}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        for(const c of main){ const seg=`M${pos[c].x},${bar}V${pos[c].y-34}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        if(rest.length){ const rx=rest.map(c=>pos[c].x).concat(mx); rd+=`M${Math.min(...rx)},${bar}H${Math.max(...rx)}`; for(const c of rest) rd+=`M${pos[c].x},${bar}V${pos[c].y-34}`; }
       } else {
-        for(const c of u.children){ const seg=`M${mx},${my}L${pos[c].x},${pos[c].y}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        for(const c of main){ const seg=`M${mx},${my}L${pos[c].x},${pos[c].y}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        for(const c of rest) rd+=`M${mx},${my}L${pos[c].x},${pos[c].y}`;
       }
     }
-    L.kc.setAttribute('d',d+dd); L.kids.setAttribute('d',d); L.ad.setAttribute('d',dd);
+    L.kc.setAttribute('d',d+dd); L.kids.setAttribute('d',d); L.ad.setAttribute('d',dd); L.rest.setAttribute('d',rd);
     if(b) L.badge.setAttribute('transform',`translate(${mx.toFixed(1)},${my.toFixed(1)})`);
   }
 }
@@ -879,18 +883,19 @@ const isDesk=()=>matchMedia('(min-width:760px)').matches;
 function visibleBox(){
   const r=svg.getBoundingClientRect(), hh=document.querySelector('header').offsetHeight; let x0=0,y0=hh,w=r.width,h=r.height-hh;
   if(!panelEl.hidden){
-    if(isDesk()){ w-=364; } else { h=Math.max(160,h-panelEl.getBoundingClientRect().height); }
+    // on wide screens the panel sits on the left (RTL), on phones at the bottom
+    if(isDesk()){ w-=364; x0=364; } else { h=Math.max(160,h-panelEl.getBoundingClientRect().height); }
   }
   return {x0,y0,w,h};
 }
-function fitTarget(sub){
+function fitTarget(sub,maxK=1.3){
   if(!(sub||VIS).length){ const r=svg.getBoundingClientRect(); return {k:1,x:r.width/2,y:r.height/2}; }
   let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
   const ex=mode!=='bubble'?75:45, ey=mode!=='bubble'?40:75;
   const TG=mode==='time'?TT:mode==='tree'?T:null;
   for(const id of (sub||VIS)){ const p=(TG&&TG[id])||pos[id]; if(!p) continue; x1=Math.min(x1,p.x-ex); x2=Math.max(x2,p.x+ex); y1=Math.min(y1,p.y-ey); y2=Math.max(y2,p.y+ey); }
   const v=visibleBox(), pad=20;
-  const k=clampK(Math.min((v.w-2*pad)/(x2-x1),(v.h-2*pad)/(y2-y1),1.3));
+  const k=clampK(Math.min((v.w-2*pad)/(x2-x1),(v.h-2*pad)/(y2-y1),maxK));
   return {k,x:v.x0+v.w/2-(x1+x2)/2*k,y:v.y0+v.h/2-(y1+y2)/2*k};
 }
 function centerOn(id){
@@ -970,13 +975,15 @@ bTree.onclick=()=>setMode('tree'); bBub.onclick=()=>setMode('bubble'); bTime.onc
 
 /* ---------- selection & panel ---------- */
 let selected=null;
-function related(id){
-  const s=new Set([id]);
-  for(const u of unionsOf(id)){ if(other(u,id)) s.add(other(u,id)); u.children.forEach(c=>s.add(c)); }
-  const pu=parentsU(id);
-  if(pu){ pu.children.forEach(c=>s.add(c));
-    for(const p of parentsOf(id)){ s.add(p); for(const u of unionsOf(p)){ if(other(u,p)) s.add(other(u,p)); u.children.forEach(c=>s.add(c)); } } }
-  return s;
+// בחירת אדם מדגישה אותו, את האחים, ההורים והסבים, ואת הענפים ביניהם. כל השאר מעומעם.
+let hlKids=null; // union id -> the only children whose branch stays bright (null = all of them)
+function lineage(id){
+  const s=new Set([id]), on=new Map(), pu=parentsU(id);
+  if(pu){
+    pu.children.forEach(c=>s.add(c)); on.set(pu.id,null);
+    for(const p of parentsOf(id)){ s.add(p); const gpu=parentsU(p); if(gpu){ parentsOf(p).forEach(g=>s.add(g)); on.set(gpu.id,new Set([p])); } }
+  }
+  return {s,on};
 }
 let trace=null; // {a,b,set,apex}
 function traceKin(a,b){
@@ -988,20 +995,26 @@ function traceKin(a,b){
   requestAnimationFrame(()=>{ viewTarget=fitTarget([...set]); });
 }
 function highlight(){
-  const set=trace?trace.set:(selected?related(selected):null), par=selected?parentsOf(selected):[];
+  const lin=!trace&&selected?lineage(selected):null, set=trace?trace.set:(lin?lin.s:null);
   for(const id of VIS){ if(!nodeEl[id]) continue; nodeEl[id].classList.toggle('dim',!!set&&!set.has(id)); nodeEl[id].classList.toggle('sel',id===selected||(!!trace&&id===trace.b)); nodeEl[id].classList.toggle('apex',!!trace&&trace.apex.has(id)); }
   for(const u of unions){
     const on=trace?((set.has(u.a)||(u.b&&set.has(u.b)))&&(u.children.some(c=>set.has(c))||(set.has(u.a)&&set.has(u.b)&&[u.a,u.b].includes(trace.a)&&[u.a,u.b].includes(trace.b))))
-      :(!set||u.a===selected||u.b===selected||u.children.includes(selected)||par.includes(u.a)||par.includes(u.b));
+      :(!lin||lin.on.has(u.id));
     linkEl[u.id].g.classList.toggle('dim',!on);
   }
+  hlKids=lin?lin.on:null; linksDirty=true;
 }
 function select(id,center){
   if(!isAll()&&(focusId!==id||forceVis)){ focusId=id; forceVis=null; selected=id; trace=null; relayout(); center=true; }
   else if(forceVis){ forceVis=null; }
   selected=id; trace=null; highlight(); renderPanel();
   panelEl.hidden=false; mainEl.classList.add('open');
-  requestAnimationFrame(()=>{ if(center||!inView(id)) centerOn(id); });
+  requestAnimationFrame(()=>{
+    // להראות את כל הענף המודגש (אחים, הורים, סבים) ולא רק את האדם
+    const fam=[...lineage(id).s].filter(x=>pos[x]&&VS.has(x));
+    if(fam.length>1){ if(center||!fam.every(inView)) viewTarget=fitTarget(fam,Math.max(view.k,.9)); }
+    else if(center||!inView(id)) centerOn(id);
+  });
 }
 function inView(id){
   const v=visibleBox(), p=pos[id], sx=p.x*view.k+view.x, sy=p.y*view.k+view.y;
