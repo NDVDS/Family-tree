@@ -59,6 +59,7 @@ svg#stage:active{cursor:grabbing}
 .ini{font-family:"Frank Ruhl Libre",serif;font-weight:700}
 .nm,.bnm{font-family:"Frank Ruhl Libre","David",serif;font-weight:700;fill:var(--ink)}
 .nm{font-size:15px} .bnm{font-size:14px}
+.bnm,.byr{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round} /* names stay readable over lines */
 .yr,.byr{font-size:12px;fill:var(--muted)}
 .node .card,.node .bub{transition:opacity .45s}
 #stage .bub{opacity:0;pointer-events:none}
@@ -753,6 +754,7 @@ function updateMore(id){
   el.querySelectorAll('.more,.bmore').forEach(x=>x.textContent=t);
 }
 function relayout(){
+  heat=1;
   const prev=new Set(VIS);
   computeVisible(); layout();
   const TG=mode==='time'?TT:T;
@@ -882,30 +884,37 @@ function drawNodes(){
 }
 
 /* ---------- bubble physics ---------- */
-let dragging=null;
+// בועות: כל דור בשורה משלו, בלי חפיפות, והתנועה נרגעת ועוצרת אחרי שנייה-שתיים.
+// זזות שוב רק כשגוררים בועה, כשעוברים לתצוגה או כשהעץ משתנה.
+let dragging=null, heat=1;
+const ROW=150, BW=88; // row height, minimum distance between bubble centres in a row
 function physics(){
-  const ids=VIS; const F={}; for(const id of ids) F[id]={x:0,y:0};
-  for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++){
-    const A=pos[ids[i]], B=pos[ids[j]];
-    let dx=A.x-B.x, dy=A.y-B.y, d2=Math.max(dx*dx+dy*dy,400), d=Math.sqrt(d2);
-    const f=7000/d2; F[ids[i]].x+=dx/d*f; F[ids[i]].y+=dy/d*f; F[ids[j]].x-=dx/d*f; F[ids[j]].y-=dy/d*f;
-  }
-  const spring=(a,b,L,k)=>{ const A=pos[a],B=pos[b]; const dx=B.x-A.x, dy=B.y-A.y, d=Math.hypot(dx,dy)||1, f=(d-L)*k;
-    F[a].x+=dx/d*f; F[a].y+=dy/d*f; F[b].x-=dx/d*f; F[b].y-=dy/d*f; };
+  if(heat<.02&&!dragging) return;
+  if(dragging) heat=Math.max(heat,.6);
+  const ids=VIS, F={}; for(const id of ids) F[id]=0;
+  const pull=(id,x,k)=>{ F[id]+=(x-pos[id].x)*k; };
   for(const u of unions){
     if(!VS.has(u.a)||(u.b&&!VS.has(u.b))) continue;
-    if(u.b) spring(u.a,u.b,u.end==='divorce'?150:95,u.end==='divorce'?.03:.07);
-    for(const c of u.children){ if(!VS.has(c)) continue; spring(c,u.a,150,.025); if(u.b) spring(c,u.b,150,.025); }
+    const A=pos[u.a], B=u.b?pos[u.b]:null;
+    if(B){ const side=A.x<=B.x?1:-1, gap=(B.x-A.x)*side-BW; F[u.a]+=gap*.08*side; F[u.b]-=gap*.08*side; }
+    const mx=B?(A.x+B.x)/2:A.x, kids=u.children.filter(c=>VS.has(c));
+    if(!kids.length) continue;
+    const cx=kids.reduce((s,c)=>s+pos[c].x,0)/kids.length;
+    for(const c of kids) pull(c,mx,.02);             // children under their parents
+    pull(u.a,cx,.01); if(u.b) pull(u.b,cx,.01);      // parents above their children
   }
+  const rowsOf={}; for(const id of ids) (rowsOf[gen[id]]=rowsOf[gen[id]]||[]).push(id);
   for(const id of ids){
-    const p=pos[id];
-    F[id].y+=(gen[id]*140-p.y)*.012;
-    F[id].x+=(-p.x)*.003;
-    if(id===dragging) continue;
-    p.vx=(p.vx+F[id].x)*.82; p.vy=(p.vy+F[id].y)*.82;
-    const s=Math.hypot(p.vx,p.vy); if(s>30){ p.vx*=30/s; p.vy*=30/s; }
-    p.x+=p.vx; p.y+=p.vy;
+    const p=pos[id]; if(id===dragging) continue;
+    p.vx=(p.vx+F[id]*heat)*.7; if(Math.abs(p.vx)>25) p.vx=Math.sign(p.vx)*25;
+    p.x+=p.vx; p.y+=((gen[id]||0)*ROW-p.y)*.2;
   }
+  for(let it=0;it<3;it++) for(const g in rowsOf){ // keep bubbles in a row from touching
+    const r=rowsOf[g].sort((a,b)=>pos[a].x-pos[b].x);
+    for(let i=0;i+1<r.length;i++){ const A=pos[r[i]], B=pos[r[i+1]], o=BW-(B.x-A.x); if(o>0){
+      if(r[i]===dragging) B.x+=o; else if(r[i+1]===dragging) A.x-=o; else { A.x-=o/2; B.x+=o/2; } } }
+  }
+  heat*=.965;
 }
 /* ---------- view: pan & zoom ---------- */
 const view={x:0,y:0,k:1}; let viewTarget=null, autoFit=0;
@@ -1001,7 +1010,7 @@ function setMode(m){
   svg.classList.toggle('bubble',m==='bubble'); svg.classList.toggle('time',m==='time');
   bTree.setAttribute('aria-pressed',m==='tree'); bBub.setAttribute('aria-pressed',m==='bubble'); bTime.setAttribute('aria-pressed',m==='time');
   hint.textContent=m==='bubble'?'אפשר לגרור בועות. לחיצה פותחת כרטיס':m==='time'?'הגובה של כל אדם לפי שנת הלידה שלו':'לחיצה על אדם פותחת את הכרטיס שלו';
-  if(m==='bubble') for(const id of VIS){ pos[id].vx=(Math.random()-.5)*6; pos[id].vy=(Math.random()-.5)*6; }
+  if(m==='bubble'){ heat=1; for(const id of VIS) pos[id].vx=0; }
   viewTarget=null; autoFit=m==='bubble'?90:55;
 }
 bTree.onclick=()=>setMode('tree'); bBub.onclick=()=>setMode('bubble'); bTime.onclick=()=>setMode('time');
