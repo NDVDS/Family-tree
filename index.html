@@ -341,6 +341,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
       <label><input type="checkbox" data-mark="fam" checked> צבע שונה לכל משפחה</label>
       <label><input type="checkbox" data-mark="gender" checked> צבע לפי מגדר</label>
       <hr>
+      <label><input type="checkbox" id="optHoriz"> עץ שוכב (משמאל לימין)</label>
       <label><input type="checkbox" id="optAll"> הצגת כל העץ</label>
       <label class="dep">דורות סביב האדם במרכז <select id="optDepth"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
       <p class="stor" id="vcount"></p>
@@ -595,11 +596,15 @@ async function updateUsage(){
 }
 
 /* ---------- layout (recomputed whenever someone is added) ---------- */
-const gen={}, X={}, T={}, TT={}, lane={};
+const gen={}, X={}, T={}, TT={}, lane={}, laneH={};
 let maxG=0, rows=[], Y0=1900;
 const CW=140, SG=24, GAP=44, LH=170, YS=11;
+// עץ שוכב: הדור המבוגר משמאל, הצאצאים ימינה, אחים אחד מתחת לשני (רק בתצוגת "עץ")
+const CH=68, HSG=30, HGAP=24, HLW=250;
+let horiz=false; try{ horiz=localStorage.getItem('ft-horiz')==='1'; }catch(e){}
+const isH=()=>horiz&&mode==='tree';
 function layout(){
-for(const o of [gen,X,T,TT,lane]) for(const k in o) delete o[k];
+for(const o of [gen,X,T,TT,lane,laneH]) for(const k in o) delete o[k];
 // work only on the people currently shown
 const ids=VIS, V=VS;
 const unions=ALLU.filter(u=>V.has(u.a)&&(!u.b||V.has(u.b))).map(u=>({...u,children:u.children.filter(c=>V.has(c))}));
@@ -622,6 +627,9 @@ for(let it=0;it<60;it++){
 { const mn=Math.min(...ids.map(i=>gen[i])); if(mn) ids.forEach(i=>gen[i]-=mn); }
 
 /* ---------- layered layout: couples chained in rows, rows aligned by barycenter ---------- */
+// place() spreads each generation along one axis; CW/SG/GAP are the card size and gaps along that axis
+const place=(CW,SG,GAP)=>{
+for(const k in X) delete X[k];
 maxG=Math.max(...ids.map(i=>gen[i]));
 rows=[];
 for(let g=0;g<=maxG;g++){
@@ -686,11 +694,16 @@ function up(g){
 { let x=0; for(const u of rows[0]){ u.want=x+u.w/2; x+=u.w+GAP; } pack(rows[0]); }
 for(let g=1;g<=maxG;g++) down(g,true);
 for(let pass=0;pass<3;pass++){ for(let g=maxG-1;g>=0;g--) up(g); for(let g=1;g<=maxG;g++) down(g,pass<2); }
-for(const id of ids) T[id]={x:-X[id],y:gen[id]*LH}; // mirrored for right-to-left reading
+return {...X};
+};
+const XV=place(CW,SG,GAP), TV={};
+for(const id of ids) TV[id]={x:-XV[id],y:gen[id]*LH}; // mirrored for right-to-left reading
+if(horiz){ const XH=place(CH,HSG,HGAP); for(const id of ids) T[id]={x:gen[id]*HLW,y:XH[id]}; } // sideways: oldest on the left
+else Object.assign(T,TV);
 
 // age view: same horizontal family order, but height = birth year
 Y0=Math.min(...ids.map(i=>bornOf(i)));
-for(const id of ids) TT[id]={x:T[id].x,y:(bornOf(id)-Y0)*YS};
+for(const id of ids) TT[id]={x:TV[id].x,y:(bornOf(id)-Y0)*YS};
 for(let it=0;it<80;it++){ // nudge overlapping cards sideways, never up or down
   let moved=false; const srt=ids.slice().sort((a,b)=>TT[a].x-TT[b].x);
   for(let i=0;i<srt.length;i++) for(let j=i+1;j<srt.length;j++){
@@ -701,15 +714,16 @@ for(let it=0;it<80;it++){ // nudge overlapping cards sideways, never up or down
   if(!moved) break;
 }
 
-// separate the horizontal child bars of neighbouring couples into lanes
-for(let g=0;g<maxG;g++){
+// separate the child bars of neighbouring couples into lanes (ax = the axis siblings are spread on)
+const lanes=(P,ax,out)=>{ for(let g=0;g<maxG;g++){
   const iv=unions.filter(u=>u.children.length&&gen[u.a]===g).map(u=>{
-    const mx=u.b?(T[u.a].x+T[u.b].x)/2:T[u.a].x, xs=u.children.map(c=>T[c].x).concat(mx);
+    const mx=u.b?(P[u.a][ax]+P[u.b][ax])/2:P[u.a][ax], xs=u.children.map(c=>P[c][ax]).concat(mx);
     return {u,lo:Math.min(...xs),hi:Math.max(...xs)};
   }).sort((a,b)=>a.lo-b.lo);
   const ends=[];
-  for(const v of iv){ let l=ends.findIndex(e=>e<v.lo-12); if(l<0){ l=ends.length; ends.push(0);} ends[l]=v.hi; lane[v.u.id]=l; }
-}
+  for(const v of iv){ let l=ends.findIndex(e=>e<v.lo-12); if(l<0){ l=ends.length; ends.push(0);} ends[l]=v.hi; out[v.u.id]=l; }
+} };
+lanes(TV,'x',lane); if(horiz) lanes(T,'y',laneH);
 }
 
 /* ---------- which people are shown: everyone, or a neighbourhood around one person ---------- */
@@ -833,7 +847,15 @@ function drawLinks(){
     const keep=hlKids&&hlKids.get(u.id), main=keep?u.children.filter(c=>keep.has(c)):u.children, rest=keep?u.children.filter(c=>!keep.has(c)):[];
     const allAd=main.every(c=>u.adopted.includes(c));
     if(u.children.length){
-      if(mode!=='bubble'){
+      if(isH()){
+        const sx=b?mx:mx+70, cx=Math.min(...u.children.map(c=>pos[c].x));
+        const bar=mx+70+(cx-70-(mx+70))*(.35+Math.min(laneH[u.id]||0,4)*.12);
+        const ys=main.map(c=>pos[c].y).concat(my);
+        const stem=`M${sx},${my}H${bar}M${bar},${Math.min(...ys)}V${Math.max(...ys)}`;
+        if(allAd) dd+=stem; else d+=stem;
+        for(const c of main){ const seg=`M${bar},${pos[c].y}H${pos[c].x-70}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        if(rest.length){ const ry=rest.map(c=>pos[c].y).concat(my); rd+=`M${bar},${Math.min(...ry)}V${Math.max(...ry)}`; for(const c of rest) rd+=`M${bar},${pos[c].y}H${pos[c].x-70}`; }
+      } else if(mode!=='bubble'){
         const sy=b?my:my+34, cy=Math.min(...u.children.map(c=>pos[c].y));
         const bar=mode==='time'?Math.min(Math.max(a.y,b?b.y:a.y)+46+Math.min(lane[u.id]||0,4)*13,cy-44):my+(cy-my)*(.3+(lane[u.id]||0)*.1);
         const xs=main.map(c=>pos[c].x).concat(mx);
@@ -1211,6 +1233,9 @@ function syncViewOpts(){ optAll.checked=isAll(); optDepth.disabled=isAll(); }
 optAll.onchange=()=>{ viewAll=optAll.checked; if(viewAll&&ids.length>300&&mode==='bubble') setMode('tree'); if(!viewAll&&selected) focusId=selected; syncViewOpts(); relayout(); autoFit=45; };
 optDepth.onchange=()=>{ depth=+optDepth.value; relayout(); autoFit=45; };
 syncViewOpts();
+const optHoriz=document.getElementById('optHoriz');
+optHoriz.checked=horiz;
+optHoriz.onchange=()=>{ horiz=optHoriz.checked; try{ localStorage.setItem('ft-horiz',horiz?'1':'0'); }catch(e){} if(mode!=='tree') setMode('tree'); relayout(); linksDirty=true; autoFit=45; };
 const bMarks=document.getElementById('bMarks'), marksPop=document.getElementById('marks');
 bMarks.onclick=e=>{ e.stopPropagation(); const open=marksPop.hidden; marksPop.hidden=!open; bMarks.setAttribute('aria-expanded',open); };
 document.addEventListener('click',e=>{ if(!marksPop.hidden&&!e.target.closest('.mk')){ marksPop.hidden=true; bMarks.setAttribute('aria-expanded','false'); } });
