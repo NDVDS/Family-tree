@@ -51,19 +51,26 @@ svg#stage:active{cursor:grabbing}
 
 /* nodes */
 .node{cursor:pointer;transition:opacity .3s}
-.node .cbg{fill:var(--surface);stroke:var(--line);stroke-opacity:.35;stroke-width:1}
-.node.m .stripe{fill:var(--male)} .node.f .stripe{fill:var(--female)}
+.node .cbg{fill:var(--surface);stroke-width:2.5}
+.node.m .cbg{stroke:var(--male)} .node.f .cbg{stroke:var(--female)}
+.node .selring{fill:none;stroke:var(--ink);stroke-width:2.5;display:none}
+.node.sel .selring,.node.hit .selring,.node.apex .selring,.node:focus-visible .selring{display:inline}
+.node.apex .selring{stroke:var(--gold);stroke-width:3.5}
+.node:focus-visible .selring{stroke:var(--male);stroke-width:3}
 .node .av{stroke-width:2.5}
 .node.m .av{fill:var(--male-t);stroke:var(--male)} .node.f .av{fill:var(--female-t);stroke:var(--female)}
 .node.m .ini{fill:var(--male)} .node.f .ini{fill:var(--female)}
 .ini{font-family:"Frank Ruhl Libre",serif;font-weight:700}
 .nm,.bnm{font-family:"Frank Ruhl Libre","David",serif;font-weight:700;fill:var(--ink)}
-.nm{font-size:15px} .bnm{font-size:14px}
+.nm{font-size:18px} .bnm{font-size:14px}
 .bnm,.byr{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round} /* names stay readable over lines */
 .yr,.byr{font-size:12px;fill:var(--muted)}
 .node .card,.node .bub{transition:opacity .45s}
 #stage .bub{opacity:0;pointer-events:none}
 #stage.bubble .card{opacity:0;pointer-events:none}
+/* only people on screen are drawn; far out, cards lose their text */
+.off{display:none}
+#stage.far .nm,#stage.far .more,#stage.far .uadd{display:none}
 #grid{opacity:0;transition:opacity .45s;pointer-events:none}
 #stage.time #grid{opacity:1}
 .gl{stroke:var(--line);stroke-opacity:.28;stroke-width:1}
@@ -71,11 +78,9 @@ svg#stage:active{cursor:grabbing}
 .gt{font:600 13px "Assistant",sans-serif;fill:var(--muted)}
 .seg button{padding:8px 13px}
 #stage.bubble .bub{opacity:1;pointer-events:auto}
-.node.sel .cbg{stroke:var(--ink);stroke-opacity:1;stroke-width:2.5}
 .node.sel .bub .av{stroke-width:5}
 .node.dim,.u.dim{opacity:.18}
 .node:focus{outline:none}
-.node:focus-visible .cbg{stroke:var(--male);stroke-width:3;stroke-opacity:1}
 
 /* links */
 .u{transition:opacity .3s}
@@ -90,7 +95,6 @@ body.no-fam .kids,body.no-fam .kids-ad{stroke:var(--line)!important}
 .kids-ad{fill:none;stroke:hsl(var(--h,200) 40% 45%);stroke-width:2.2;stroke-dasharray:2 5;stroke-linecap:round}
 .u.div .mar-o{stroke-width:3;stroke-dasharray:9 7;stroke-linecap:butt}
 .u.div .mar-i{display:none}
-.node.apex .cbg{stroke:var(--gold);stroke-width:3.5;stroke-opacity:1}
 .node.apex .bub .av{stroke:var(--gold);stroke-width:5}
 .ctrls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ds{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
@@ -108,6 +112,9 @@ select.ask{width:100%;box-shadow:none;background:var(--bg);border:0}
 .zoom{position:absolute;inset-inline-start:12px;top:12px;display:flex;flex-direction:column;gap:6px}
 .zoom button{width:40px;height:40px;border-radius:12px;border:0;background:var(--surface);color:var(--ink);font:600 1.2rem "Assistant",sans-serif;box-shadow:var(--shadow);cursor:pointer}
 .legend[hidden]{display:none}
+.minimap{position:absolute;inset-inline-end:12px;bottom:12px;width:200px;height:130px;background:color-mix(in srgb,var(--surface) 88%,transparent);border-radius:12px;box-shadow:var(--shadow);touch-action:none;cursor:pointer;transition:opacity .25s}
+.minimap[hidden]{display:block;opacity:0;pointer-events:none}
+@media (max-width:759px){.minimap{width:128px;height:88px}}
 .lgbtn{position:absolute;inset-inline-start:12px;bottom:12px;border:0;background:var(--surface);color:var(--ink);font:600 .9rem "Assistant",sans-serif;padding:8px 14px;border-radius:999px;box-shadow:var(--shadow);cursor:pointer}
 .lgbtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .legend{position:absolute;inset-inline-start:12px;bottom:56px;background:var(--surface);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow);font-size:.85rem;display:grid;grid-template-columns:auto auto;gap:4px 16px;align-items:center}
@@ -128,7 +135,7 @@ select.ask{width:100%;box-shadow:none;background:var(--bg);border:0}
 @media (max-width:759px){
   #panel{left:0;right:0;bottom:0;max-height:62%;border-radius:20px 20px 0 0;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
   #panel[hidden]{transform:translateY(110%)}
-  main.open .legend,main.open .lgbtn{display:none}
+  main.open .legend,main.open .lgbtn,main.open #mini{display:none}
 }
 /* phones: the card is a sheet that can be collapsed to a thin strip so the tree stays visible */
 .grab{display:none}
@@ -244,9 +251,8 @@ body.no-div .u.div .mar-i{display:inline}
 body.no-ad .kids-ad{stroke-dasharray:none;stroke-width:2}
 body.no-gender .node .av{fill:var(--bg);stroke:var(--line)}
 body.no-gender .node .ini{fill:var(--ink)}
-body.no-gender .node .stripe{fill:var(--line)}
+body.no-gender .node .cbg{stroke:var(--line)}
 body.no-div [data-lg="div"],body.no-ad [data-lg="ad"],body.no-gender [data-lg="gender"]{display:none}
-.node.hit .cbg{stroke:var(--ink);stroke-width:2.5;stroke-opacity:1}
 @media (max-width:759px){.srch{flex:1 1 100%;order:-1}.srch input{width:100%}#qres{inset-inline-end:0}}
 
 /* compact floating top bar: the tree gets the whole screen */
@@ -343,6 +349,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
       <label><input type="checkbox" data-mark="gender" checked> צבע לפי מגדר</label>
       <hr>
       <label><input type="checkbox" id="optHoriz"> עץ שוכב (משמאל לימין)</label>
+      <label><input type="checkbox" id="optMini"> מפה קטנה בפינה</label>
       <label><input type="checkbox" id="optAll"> הצגת כל העץ</label>
       <label class="dep">דורות סביב האדם במרכז <select id="optDepth"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
       <p class="stor" id="vcount"></p>
@@ -370,6 +377,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
     <button id="zOut" aria-label="הקטנה">−</button>
     <button id="zFit" aria-label="התאמה למסך">⤢</button>
   </div>
+  <canvas id="mini" class="minimap" hidden aria-label="מפה קטנה של כל העץ: גוררים את הריבוע כדי לזוז, ואת הפינה שלו כדי להתקרב או להתרחק"></canvas>
   <button id="bLegend" class="lgbtn" aria-expanded="false" aria-controls="legend">מקרא</button>
   <div class="legend" id="legend" hidden>
     <span data-lg="gender"><i class="dot m"></i>גבר</span>
@@ -599,9 +607,9 @@ async function updateUsage(){
 /* ---------- layout (recomputed whenever someone is added) ---------- */
 const gen={}, X={}, T={}, TT={}, lane={}, laneH={};
 let maxG=0, rows=[], Y0=1900;
-const CW=140, SG=24, GAP=44, LH=170, YS=11;
+const CW=140, SG=24, GAP=44, LH=140, YS=11, HH=22; // card width, gaps, row height, half card height
 // עץ שוכב: הדור המבוגר משמאל, הצאצאים ימינה, אחים אחד מתחת לשני (רק בתצוגת "עץ")
-const CH=68, HSG=30, HGAP=24, HLW=250;
+const CH=44, HSG=26, HGAP=22, HLW=250;
 let horiz=false; try{ horiz=localStorage.getItem('ft-horiz')==='1'; }catch(e){}
 const isH=()=>horiz&&mode==='tree';
 function layout(){
@@ -755,7 +763,7 @@ for(let it=0;it<80;it++){ // nudge overlapping cards sideways, never up or down
   for(let i=0;i<srt.length;i++) for(let j=i+1;j<srt.length;j++){
     const A=TT[srt[i]], B=TT[srt[j]], dx=B.x-A.x; if(dx>=CW+12) break;
     const ox=CW+12-Math.abs(dx);
-    if(ox>0&&Math.abs(B.y-A.y)<78){ const s=(dx>=0?1:-1)*ox/2; A.x-=s; B.x+=s; moved=true; }
+    if(ox>0&&Math.abs(B.y-A.y)<2*HH+10){ const s=(dx>=0?1:-1)*ox/2; A.x-=s; B.x+=s; moved=true; }
   }
   if(!moved) break;
 }
@@ -775,7 +783,7 @@ lanes(TV,'x',lane); if(horiz) lanes(T,'y',laneH);
 /* ---------- which people are shown: everyone, or a neighbourhood around one person ---------- */
 const VIS=[], VS=new Set();
 let viewAll=null, depth=3, focusId=D.focus||null, forceVis=null;
-const isAll=()=>viewAll??(ids.length<=150);
+const isAll=()=>viewAll??true; // whole tree by default; only what is on screen gets drawn (cull)
 function computeVisible(){
   VIS.length=0; VS.clear();
   const add=i=>{ if(i&&people[i]&&!VS.has(i)){ VS.add(i); VIS.push(i); } };
@@ -799,7 +807,7 @@ function updateMore(id){
   el.querySelectorAll('.more,.bmore').forEach(x=>x.textContent=t);
 }
 function relayout(){
-  heat=1;
+  heat=1; cullDirty=true;
   const prev=new Set(VIS);
   computeVisible(); layout();
   const TG=mode==='time'?TT:T;
@@ -813,6 +821,7 @@ function relayout(){
     }
   }
   for(const id in nodeEl) if(!VS.has(id)) nodeEl[id].style.display='none';
+  if(toFit.length){ fitNames(toFit); toFit=[]; }
   VIS.forEach(updateMore);
   buildLinks(); drawGrid(); linksDirty=true;
   const vc=document.getElementById('vcount');
@@ -823,6 +832,10 @@ function relayout(){
 /* ---------- build SVG ---------- */
 const svg=document.getElementById('stage'), world=document.getElementById('world');
 const gNodes=document.getElementById('nodes'), gLinks=document.getElementById('links');
+// the stage size is cached: asking the browser every frame forces a full re-layout of a big tree
+let stageR=null, headerH=0;
+const stageBox=()=>stageR||(stageR=svg.getBoundingClientRect());
+addEventListener('resize',()=>{ stageR=null; headerH=0; cullDirty=true; });
 const pos={}, lastP={}; let linksDirty=true;
 const nodeEl={}, linkEl={};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -835,17 +848,17 @@ function avatar(p,r){
 }
 function nodeInner(id){
   const p=people[id];
+  // כרטיס: השם בולט, בלי שנה; מגדר = צבע המסגרת. תמונה קטנה רק אם יש.
+  const ph=p.photos[0];
   return `<g class="card">
-    <rect class="cbg" x="-70" y="-34" width="140" height="68" rx="12"/>
-    <rect class="stripe" x="62" y="-22" width="4" height="44" rx="2"/>
-    <g transform="translate(36,0)">${avatar(p,20)}</g>
-    <text class="nm" x="10" y="-3" text-anchor="end">${esc(fullName(p))}</text>
-    <text class="yr" x="10" y="16" text-anchor="end">${esc(years(p))}</text>
-    <text class="more" x="-62" y="-19"></text>
+    <rect class="selring" x="-77" y="-29" width="154" height="58" rx="16"/>
+    <rect class="cbg" x="-70" y="-22" width="140" height="44" rx="11"/>
+    ${ph?`<g transform="translate(51,0)">${avatar(p,15)}</g>`:''}
+    <text class="nm" x="${ph?-12:0}" y="6" text-anchor="middle" data-max="${ph?100:124}">${esc(fullName(p))}</text>
+    <text class="more" x="-66" y="-28"></text>
   </g>
   <g class="bub">${avatar(p,32)}
     <text class="bnm" y="52" text-anchor="middle">${esc(p.first)}</text>
-    <text class="byr" y="67" text-anchor="middle">${p.born||'?'}</text>
     <text class="bmore" x="24" y="-24"></text>
   </g>`;
 }
@@ -871,12 +884,24 @@ function buildLinks(){
   fam.sort((x,y)=>(gen[x.a]-gen[y.a])||(mid(x)-mid(y)));
   fam.forEach((u,i)=>linkEl[u.id].g.style.setProperty('--h',((i*137.508)%360).toFixed(0)));
 }
+let toFit=[];
+function fitNames(list){ // read all widths first, then write: one layout instead of one per card
+  const ts=list.map(g=>g.querySelector('.nm')).filter(Boolean);
+  ts.forEach(t=>{ t.removeAttribute('textLength'); t.removeAttribute('lengthAdjust'); });
+  const w=ts.map(t=>{ try{ return t.getComputedTextLength(); }catch(e){ return 0; } });
+  ts.forEach((t,i)=>{ const max=+t.dataset.max; if(w[i]>max){ t.setAttribute('textLength',max); t.setAttribute('lengthAdjust','spacingAndGlyphs'); } });
+}
+function fitName(g){
+  const t=g.querySelector('.nm'); if(!t) return; t.removeAttribute('textLength'); t.removeAttribute('lengthAdjust');
+  try{ const max=+t.dataset.max; if(t.getComputedTextLength()>max){ t.setAttribute('textLength',max); t.setAttribute('lengthAdjust','spacingAndGlyphs'); } }catch(e){}
+}
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>fitNames(Object.values(nodeEl)));
 function buildNode(id){
   const g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.setAttribute('class','node '+people[id].g); g.dataset.id=id;
   g.setAttribute('tabindex','0'); g.setAttribute('role','button');
   g.setAttribute('aria-label',fullName(people[id])+', '+years(people[id]));
-  g.innerHTML=nodeInner(id); gNodes.appendChild(g); nodeEl[id]=g;
+  g.innerHTML=nodeInner(id); gNodes.appendChild(g); nodeEl[id]=g; toFit.push(g);
   g.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pickCb?tapNode(id):select(id,true); } });
 }
 
@@ -884,7 +909,7 @@ function buildNode(id){
 let mode='tree';
 function drawLinks(){
   for(const u0 of unions){
-    const L=linkEl[u0.id]; if(!L||!L.vis) continue;
+    const L=linkEl[u0.id]; if(!L||!L.vis||L.off) continue;
     const u={...u0,children:u0.children.filter(c=>VS.has(c))};
     const a=pos[u.a], b=u.b?pos[u.b]:null;
     const mar=b?`M${a.x},${a.y}L${b.x},${b.y}`:'';
@@ -903,13 +928,13 @@ function drawLinks(){
         for(const c of main){ const seg=`M${bar},${pos[c].y}H${pos[c].x-70}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
         if(rest.length){ const ry=rest.map(c=>pos[c].y).concat(my); rd+=`M${bar},${Math.min(...ry)}V${Math.max(...ry)}`; for(const c of rest) rd+=`M${bar},${pos[c].y}H${pos[c].x-70}`; }
       } else if(mode!=='bubble'){
-        const sy=b?my:my+34, cy=Math.min(...u.children.map(c=>pos[c].y));
+        const sy=b?my:my+HH, cy=Math.min(...u.children.map(c=>pos[c].y));
         const bar=mode==='time'?Math.min(Math.max(a.y,b?b.y:a.y)+46+Math.min(lane[u.id]||0,4)*13,cy-44):my+(cy-my)*(.3+(lane[u.id]||0)*.1);
         const xs=main.map(c=>pos[c].x).concat(mx);
         const stem=`M${mx},${sy}V${bar}M${Math.min(...xs)},${bar}H${Math.max(...xs)}`;
         if(allAd) dd+=stem; else d+=stem;
-        for(const c of main){ const seg=`M${pos[c].x},${bar}V${pos[c].y-34}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
-        if(rest.length){ const rx=rest.map(c=>pos[c].x).concat(mx); rd+=`M${Math.min(...rx)},${bar}H${Math.max(...rx)}`; for(const c of rest) rd+=`M${pos[c].x},${bar}V${pos[c].y-34}`; }
+        for(const c of main){ const seg=`M${pos[c].x},${bar}V${pos[c].y-HH}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
+        if(rest.length){ const rx=rest.map(c=>pos[c].x).concat(mx); rd+=`M${Math.min(...rx)},${bar}H${Math.max(...rx)}`; for(const c of rest) rd+=`M${pos[c].x},${bar}V${pos[c].y-HH}`; }
       } else {
         for(const c of main){ const seg=`M${mx},${my}L${pos[c].x},${pos[c].y}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
         for(const c of rest) rd+=`M${mx},${my}L${pos[c].x},${pos[c].y}`;
@@ -919,12 +944,29 @@ function drawLinks(){
     if(b) L.badge.setAttribute('transform',`translate(${mx.toFixed(1)},${my.toFixed(1)})`);
   }
 }
+// draw only what is on screen (plus a margin): off-screen cards and lines are taken out of the page, so even a very large tree stays smooth
+let cullDirty=true, farOn=false;
+function cull(){
+  const r=stageBox(), k=view.k, m=160/k;
+  const x0=-view.x/k-m, x1=(r.width-view.x)/k+m, y0=-view.y/k-m, y1=(r.height-view.y)/k+m;
+  const inV=p=>p&&p.x>=x0&&p.x<=x1&&p.y>=y0&&p.y<=y1;
+  for(const id of VIS){ const el=nodeEl[id]; if(!el) continue; const off=!inV(pos[id]); if(el._off!==off){ el._off=off; if(off) el.remove(); else { gNodes.appendChild(el); delete lastP[id]; } } }
+  for(const u of unions){
+    const L=linkEl[u.id]; if(!L||!L.vis) continue;
+    const pts=[pos[u.a],u.b&&pos[u.b],...u.children.map(c=>VS.has(c)&&pos[c])].filter(Boolean);
+    let lx=Infinity,hx=-Infinity,ly=Infinity,hy=-Infinity; for(const p of pts){ lx=Math.min(lx,p.x); hx=Math.max(hx,p.x); ly=Math.min(ly,p.y); hy=Math.max(hy,p.y); }
+    const off=hx<x0||lx>x1||hy<y0||ly>y1;
+    if(L.off!==off){ L.off=off; if(off) L.g.remove(); else { gLinks.appendChild(L.g); linksDirty=true; } }
+  }
+  const far=k<.3&&mode!=='bubble'; if(far!==farOn){ farOn=far; svg.classList.toggle('far',far); }
+}
 function drawNodes(){
   for(const id of VIS){
+    if(nodeEl[id]._off) continue;
     const p=pos[id], l=lastP[id];
     if(l&&Math.abs(l.x-p.x)<.05&&Math.abs(l.y-p.y)<.05) continue;
     nodeEl[id].setAttribute('transform',`translate(${p.x.toFixed(1)},${p.y.toFixed(1)})`);
-    lastP[id]={x:p.x,y:p.y}; linksDirty=true;
+    lastP[id]={x:p.x,y:p.y}; linksDirty=true; cullDirty=true;
   }
 }
 
@@ -968,7 +1010,7 @@ const panelEl=document.getElementById('panel'), mainEl=document.getElementById('
 const isDesk=()=>matchMedia('(min-width:760px)').matches;
 const PEEK=110;
 function visibleBox(){
-  const r=svg.getBoundingClientRect(), hh=document.querySelector('header').offsetHeight; let x0=0,y0=hh,w=r.width,h=r.height-hh;
+  const r=stageBox(), hh=headerH||(headerH=document.querySelector('header').offsetHeight); let x0=0,y0=hh,w=r.width,h=r.height-hh;
   if(!panelEl.hidden){
     // on wide screens the panel sits on the left (RTL), on phones at the bottom
     if(isDesk()){ w-=364; x0=364; } else { h=Math.max(160,h-(panelEl.classList.contains('peek')?PEEK:panelEl.getBoundingClientRect().height)); }
@@ -976,14 +1018,20 @@ function visibleBox(){
   return {x0,y0,w,h};
 }
 function fitTarget(sub,maxK=1.3){
-  if(!(sub||VIS).length){ const r=svg.getBoundingClientRect(); return {k:1,x:r.width/2,y:r.height/2}; }
+  if(!(sub||VIS).length){ const r=stageBox(); return {k:1,x:r.width/2,y:r.height/2}; }
   let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
-  const ex=mode!=='bubble'?75:45, ey=mode!=='bubble'?40:75;
+  const ex=mode!=='bubble'?75:45, ey=mode!=='bubble'?HH+8:75;
   const TG=mode==='time'?TT:mode==='tree'?T:null;
   for(const id of (sub||VIS)){ const p=(TG&&TG[id])||pos[id]; if(!p) continue; x1=Math.min(x1,p.x-ex); x2=Math.max(x2,p.x+ex); y1=Math.min(y1,p.y-ey); y2=Math.max(y2,p.y+ey); }
   const v=visibleBox(), pad=20;
   const k=clampK(Math.min((v.w-2*pad)/(x2-x1),(v.h-2*pad)/(y2-y1),maxK));
   return {k,x:v.x0+v.w/2-(x1+x2)/2*k,y:v.y0+v.h/2-(y1+y2)/2*k};
+}
+// opening view: the whole tree if it is readable, otherwise a readable size at its middle (the minimap shows the rest)
+function openTarget(){
+  const t=fitTarget(); if(t.k>=.12||mode==='bubble') return t;
+  const v=visibleBox(), wx=(v.x0+v.w/2-t.x)/t.k, wy=(v.y0+v.h/2-t.y)/t.k, k=.55;
+  return {k,x:v.x0+v.w/2-wx*k,y:v.y0+v.h/2-wy*k};
 }
 function centerOn(id){
   const v=visibleBox(), k=Math.max(view.k,.85), TG=mode==='time'?TT:mode==='tree'?T:null, p=(TG&&TG[id])||pos[id]; if(!p) return;
@@ -995,7 +1043,7 @@ function zoomAt(f,sx,sy){
 }
 function stopAuto(){ viewTarget=null; autoFit=0; }
 
-const local=e=>{ const r=svg.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+const local=e=>{ const r=stageBox(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
 const pts=new Map(); let gest=null;
 svg.addEventListener('pointerdown',e=>{
   svg.setPointerCapture(e.pointerId); pts.set(e.pointerId,local(e)); stopAuto();
@@ -1029,7 +1077,7 @@ function endPtr(e){
 }
 svg.addEventListener('pointerup',endPtr); svg.addEventListener('pointercancel',endPtr);
 svg.addEventListener('wheel',e=>{ e.preventDefault(); stopAuto(); const l=local(e); zoomAt(Math.exp(-e.deltaY*.0015),l.x,l.y); },{passive:false});
-const zc=f=>{ stopAuto(); const r=svg.getBoundingClientRect(); zoomAt(f,r.width/2,r.height/2); };
+const zc=f=>{ stopAuto(); const r=stageBox(); zoomAt(f,r.width/2,r.height/2); };
 document.getElementById('zIn').onclick=()=>zc(1.25);
 document.getElementById('zOut').onclick=()=>zc(.8);
 document.getElementById('zFit').onclick=()=>{ viewTarget=fitTarget(); };
@@ -1267,7 +1315,7 @@ function addPhoto(id,file){
     c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
     c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
     people[id].photos.push(c.toDataURL('image/jpeg',.85));
-    if(nodeEl[id]){ nodeEl[id].innerHTML=nodeInner(id); updateMore(id); } renderPanel();
+    if(nodeEl[id]){ nodeEl[id].innerHTML=nodeInner(id); fitName(nodeEl[id]); updateMore(id); } renderPanel();
     saveState(); toast('התמונה נשמרה.');
   };
   img.onerror=()=>toast('לא הצלחתי לקרוא את הקובץ. נסו תמונה בפורמט JPG או PNG.');
@@ -1287,6 +1335,60 @@ function syncViewOpts(){ optAll.checked=isAll(); optDepth.disabled=isAll(); }
 optAll.onchange=()=>{ viewAll=optAll.checked; if(viewAll&&ids.length>300&&mode==='bubble') setMode('tree'); if(!viewAll&&selected) focusId=selected; syncViewOpts(); relayout(); autoFit=45; };
 optDepth.onchange=()=>{ depth=+optDepth.value; relayout(); autoFit=45; };
 syncViewOpts();
+/* ---------- minimap: the whole tree in a corner, with a rectangle for what is on screen ---------- */
+// גוררים את הריבוע כדי לזוז בעץ, וגוררים פינה שלו כדי להתקרב או להתרחק. מופיעה רק כשחלק מהעץ מחוץ למסך.
+const mini=document.getElementById('mini'), mctx=mini.getContext('2d'), optMini=document.getElementById('optMini');
+let miniOn=true; try{ miniOn=localStorage.getItem('ft-mini')!=='0'; }catch(e){}
+optMini.checked=miniOn;
+optMini.onchange=()=>{ miniOn=optMini.checked; try{ localStorage.setItem('ft-mini',miniOn?'1':'0'); }catch(e){} miniDirty=true; };
+let miniDirty=true, mm=null, mdrag=null;
+function viewRect(){ const r=stageBox(), k=view.k; return {x0:-view.x/k,y0:-view.y/k,x1:(r.width-view.x)/k,y1:(r.height-view.y)/k}; }
+function drawMini(){
+  miniDirty=false;
+  if(!miniOn||!VIS.length){ mini.hidden=true; return; }
+  let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+  for(const id of VIS){ const p=pos[id]; if(!p) continue; if(p.x<x0)x0=p.x; if(p.x>x1)x1=p.x; if(p.y<y0)y0=p.y; if(p.y>y1)y1=p.y; }
+  x0-=80; x1+=80; y0-=40; y1+=40;
+  const v=viewRect();
+  if(!mdrag&&v.x0<=x0&&v.x1>=x1&&v.y0<=y0&&v.y1>=y1){ mini.hidden=true; return; } // the whole tree is already on screen
+  mini.hidden=false;
+  const W=mini.clientWidth, H=mini.clientHeight, dpr=devicePixelRatio||1;
+  if(mini.width!==Math.round(W*dpr)){ mini.width=Math.round(W*dpr); mini.height=Math.round(H*dpr); }
+  // each axis is scaled on its own, so even a very wide, flat tree fills the map
+  const pad=6, sx=(W-2*pad)/(x1-x0), sy=(H-2*pad)/(y1-y0), ox=pad-x0*sx, oy=pad-y0*sy;
+  mm={sx,sy,ox,oy};
+  const cs=getComputedStyle(document.documentElement), col=n=>cs.getPropertyValue(n).trim();
+  mctx.setTransform(dpr,0,0,dpr,0,0); mctx.clearRect(0,0,W,H);
+  const d=Math.max(2,Math.min(5,140*sx));
+  for(const g of ['m','f']){ mctx.fillStyle=col(g==='m'?'--male':'--female');
+    for(const id of VIS){ const p=pos[id]; if(p&&people[id].g===g) mctx.fillRect(p.x*sx+ox-d/2,p.y*sy+oy-1.5,d,3); } }
+  let rx=v.x0*sx+ox, ry=v.y0*sy+oy, rw=(v.x1-v.x0)*sx, rh=(v.y1-v.y0)*sy;
+  if(rw<10){ rx-=(10-rw)/2; rw=10; } if(rh<10){ ry-=(10-rh)/2; rh=10; } // keep it big enough to see and grab
+  mini.dataset.r=[rx,ry,rx+rw,ry+rh].map(Math.round).join(); // where the rectangle is (used by tests)
+  mctx.fillStyle='rgba(120,140,140,.18)'; mctx.fillRect(rx,ry,rw,rh);
+  mctx.strokeStyle=col('--ink'); mctx.lineWidth=1.5; mctx.strokeRect(rx,ry,rw,rh);
+  mctx.fillStyle=col('--ink'); for(const [cx,cy] of [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]]){ mctx.beginPath(); mctx.arc(cx,cy,3.5,0,7); mctx.fill(); }
+}
+function miniPt(e){ const r=mini.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; }
+function centreAt(wx,wy,k){ const r=stageBox(); view.k=clampK(k); view.x=r.width/2-wx*view.k; view.y=r.height/2-wy*view.k; }
+mini.addEventListener('pointerdown',e=>{
+  if(!mm) return; e.stopPropagation(); mini.setPointerCapture(e.pointerId); stopAuto();
+  const q=miniPt(e), v=viewRect(), rx0=v.x0*mm.sx+mm.ox, ry0=v.y0*mm.sy+mm.oy, rx1=v.x1*mm.sx+mm.ox, ry1=v.y1*mm.sy+mm.oy;
+  const near=[[rx0,ry0],[rx1,ry0],[rx0,ry1],[rx1,ry1]].some(([x,y])=>Math.hypot(q.x-x,q.y-y)<16);
+  mdrag={resize:near,cx:(rx0+rx1)/2,cy:(ry0+ry1)/2,hw:(rx1-rx0)/2,k:view.k};
+  if(!near) move(q);
+});
+function move(q){ centreAt((q.x-mm.ox)/mm.sx,(q.y-mm.oy)/mm.sy,view.k); miniDirty=true; }
+mini.addEventListener('pointermove',e=>{
+  if(!mdrag) return; const q=miniPt(e);
+  if(!mdrag.resize) return move(q);
+  const hw=Math.max(4,Math.abs(q.x-mdrag.cx)); // a bigger rectangle = see more = zoom out
+  centreAt((mdrag.cx-mm.ox)/mm.sx,(mdrag.cy-mm.oy)/mm.sy,mdrag.k*mdrag.hw/hw); miniDirty=true;
+});
+const endMini=()=>{ mdrag=null; miniDirty=true; };
+mini.addEventListener('pointerup',endMini); mini.addEventListener('pointercancel',endMini);
+mini.addEventListener('wheel',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
+addEventListener('resize',()=>{ miniDirty=true; });
 const optHoriz=document.getElementById('optHoriz');
 optHoriz.checked=horiz;
 optHoriz.onchange=()=>{ horiz=optHoriz.checked; try{ localStorage.setItem('ft-horiz',horiz?'1':'0'); }catch(e){} if(mode!=='tree') setMode('tree'); relayout(); linksDirty=true; autoFit=45; };
@@ -1893,20 +1995,24 @@ const emptyEl=document.getElementById('empty'); document.getElementById('bFirst'
 let lastWT='';
 function tick(){
   if(emptyEl.hidden!==(ids.length>0)){ emptyEl.hidden=ids.length>0; document.getElementById('bLegend').style.display=ids.length?'':'none'; if(!ids.length) document.getElementById('legend').hidden=true; }
-  if(mode!=='bubble'){ const TG=mode==='time'?TT:T; for(const id of VIS){ if(!TG[id]) continue; const p=pos[id]; p.x+=(TG[id].x-p.x)*.14; p.y+=(TG[id].y-p.y)*.14; p.vx=p.vy=0; } }
+  if(mode!=='bubble'){ const TG=mode==='time'?TT:T; for(const id of VIS){ if(!TG[id]) continue; const p=pos[id];
+    if(nodeEl[id]&&nodeEl[id]._off){ p.x=TG[id].x; p.y=TG[id].y; } // off screen: jump, no animation
+    else { p.x+=(TG[id].x-p.x)*.14; p.y+=(TG[id].y-p.y)*.14; } p.vx=p.vy=0; } }
   else physics();
-  if(autoFit>0){ viewTarget=fitTarget(); autoFit--; }
+  if(autoFit>0){ viewTarget=openTarget(); autoFit--; }
   if(viewTarget){
     view.x+=(viewTarget.x-view.x)*.14; view.y+=(viewTarget.y-view.y)*.14; view.k+=(viewTarget.k-view.k)*.14;
     if(!autoFit&&Math.abs(viewTarget.x-view.x)<.5&&Math.abs(viewTarget.k-view.k)<.002) viewTarget=null;
   }
   const wt=`translate(${view.x.toFixed(1)},${view.y.toFixed(1)}) scale(${view.k.toFixed(4)})`;
-  if(wt!==lastWT){ world.setAttribute('transform',wt); lastWT=wt; }
-  drawNodes(); if(linksDirty){ drawLinks(); linksDirty=false; }
+  if(wt!==lastWT){ world.setAttribute('transform',wt); lastWT=wt; cullDirty=true; miniDirty=true; }
+  if(linksDirty) miniDirty=true;
+  drawNodes(); if(cullDirty){ cull(); cullDirty=false; } if(linksDirty){ drawLinks(); linksDirty=false; }
+  if(miniDirty) drawMini();
   requestAnimationFrame(tick);
 }
 relayout();
-Object.assign(view,fitTarget());
+Object.assign(view,openTarget());
 let rt; addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ if(!selected) viewTarget=fitTarget(); },200); });
 tick();
 setTimeout(maybeRemind,4000);
