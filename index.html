@@ -70,7 +70,14 @@ svg#stage:active{cursor:grabbing}
 #stage.bubble .card{opacity:0;pointer-events:none}
 /* only people on screen are drawn; far out, cards lose their text */
 .off{display:none}
-#stage.far .nm,#stage.far .more,#stage.far .uadd{display:none}
+#stage.far .nm,#stage.far .more,#stage.far .uadd,#stage.far .fold{display:none}
+.fold{cursor:pointer}
+.fold .hit{fill:transparent}
+.fold .bg{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.fold text{font:700 13px "Assistant",sans-serif;fill:var(--muted);pointer-events:none}
+.fold.on .bg{fill:var(--ink);stroke:var(--ink)}
+.fold.on text{fill:var(--bg)}
+.fold:focus{outline:none} .fold:focus-visible .bg{stroke:var(--male);stroke-width:3}
 #grid{opacity:0;transition:opacity .45s;pointer-events:none}
 #stage.time #grid{opacity:1}
 .gl{stroke:var(--line);stroke-opacity:.28;stroke-width:1}
@@ -115,6 +122,57 @@ select.ask{width:100%;box-shadow:none;background:var(--bg);border:0}
 .minimap{position:absolute;inset-inline-end:12px;bottom:12px;width:200px;height:130px;background:color-mix(in srgb,var(--surface) 88%,transparent);border-radius:12px;box-shadow:var(--shadow);touch-action:none;cursor:pointer;transition:opacity .25s}
 .minimap[hidden]{display:block;opacity:0;pointer-events:none}
 @media (max-width:759px){.minimap{width:128px;height:88px}}
+/* family view: one family at a time */
+.fam{position:absolute;inset:0;overflow-y:auto;padding:60px 16px 32px;background:var(--bg);-webkit-overflow-scrolling:touch}
+.fam[hidden]{display:none}
+main.famon #stage,main.famon .zoom,main.famon #mini,main.famon #bLegend,main.famon #legend{display:none}
+@media (min-width:760px){main.famon.open .fam{padding-left:376px}}
+@media (max-width:759px){main.famon.open .fam{padding-bottom:65vh}}
+.fnav{display:flex;gap:8px;align-items:center;max-width:760px;margin:0 auto 14px;flex-wrap:wrap}
+.fbtn{border:0;background:var(--surface);color:var(--ink);font:600 .9rem "Assistant",sans-serif;padding:7px 13px;border-radius:999px;box-shadow:var(--shadow);cursor:pointer}
+.fbtn:disabled{opacity:.4;cursor:default}
+.crumbs{list-style:none;margin:0;padding:0;display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:var(--muted);min-width:0}
+.crumbs li+li::before{content:"‹";margin-inline-end:4px}
+.crumbs button{border:0;background:none;color:var(--muted);font:inherit;padding:2px 4px;cursor:pointer;text-decoration:underline}
+.crumbs li:last-child button{color:var(--ink);font-weight:700;text-decoration:none;cursor:default}
+.fbody{max-width:760px;margin:0 auto;display:flex;flex-direction:column;align-items:center}
+.fbody.anim{animation:fin .22s ease}
+@keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fbody.anim{animation:none}}
+.fsec{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
+.flabel{font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.02em;margin:2px 0 0}
+.frow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;width:100%}
+.fgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
+.fgrid .fcard{flex:0 1 160px}
+.fline{width:2px;height:22px;background:var(--line);opacity:.6;margin:4px 0}
+.fcard{border:2.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:9px 12px;cursor:pointer;text-align:center;font:inherit;min-width:140px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s,box-shadow .12s}
+.fcard:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.fcard.m{border-color:var(--male)} .fcard.f{border-color:var(--female)}
+body.no-gender .fcard{border-color:var(--line)}
+.fcard .fn{font:700 1.02rem "Frank Ruhl Libre","David",serif;line-height:1.2}
+.fcard .fs{font-size:.78rem;color:var(--muted)}
+.fcard img{width:44px;height:44px;border-radius:50%;object-fit:cover;margin-bottom:4px}
+.fcard.small{min-width:0;padding:5px 10px}
+.fcard.small .fn{font-size:.9rem}
+.fgp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%;max-width:520px}
+.fgp .side{display:flex;flex-direction:column;align-items:center;gap:6px}
+.fgp .side .frow{gap:6px}
+.fme{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;row-gap:10px}
+.fme .fcard.me{min-width:200px;padding:14px 18px;box-shadow:var(--shadow)}
+.fme .fcard.me .fn{font-size:1.45rem}
+.fme .fcard.me img{width:72px;height:72px}
+.fring{display:flex;flex-direction:column;align-items:center;padding:0 6px;color:var(--gold);font-size:.72rem;font-weight:700}
+.fring i{display:block;width:26px;height:6px;border-radius:4px;background:var(--gold);position:relative}
+.fring i::after{content:"";position:absolute;inset:2px 2px;background:var(--bg);border-radius:2px}
+.fring.div i{background:none;border-top:3px dashed var(--gold);height:0}
+.fring.div i::after{display:none}
+.fact{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0 4px}
+.fact button,.fadd{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 .86rem "Assistant",sans-serif;padding:6px 12px;border-radius:999px;cursor:pointer}
+.fact .pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fadd{border-style:dashed;background:none;align-self:center}
+.fgroup{width:100%;display:flex;flex-direction:column;gap:6px}
+.fgroup h4{margin:6px 0 0;font-size:.85rem;color:var(--muted);font-weight:600;text-align:center}
+.fhome{font-size:.75rem;color:var(--gold);font-weight:700}
 .lgbtn{position:absolute;inset-inline-start:12px;bottom:12px;border:0;background:var(--surface);color:var(--ink);font:600 .9rem "Assistant",sans-serif;padding:8px 14px;border-radius:999px;box-shadow:var(--shadow);cursor:pointer}
 .lgbtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .legend{position:absolute;inset-inline-start:12px;bottom:56px;background:var(--surface);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow);font-size:.85rem;display:grid;grid-template-columns:auto auto;gap:4px 16px;align-items:center}
@@ -270,6 +328,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
 .zoom button{width:34px;height:34px;border-radius:10px;font-size:1.05rem}
 @media (min-width:760px){#panel{top:58px}}
 @media (max-width:759px){
+  .seg button{padding:6px 8px;font-size:.82rem}
   h1{display:none}
   header{justify-content:flex-start}
   .ctrls{flex:1}
@@ -351,6 +410,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
       <label><input type="checkbox" id="optHoriz"> עץ שוכב (משמאל לימין)</label>
       <label><input type="checkbox" id="optMini"> מפה קטנה בפינה</label>
       <label><input type="checkbox" id="optAll"> הצגת כל העץ</label>
+      <button id="bUnfold" class="rst plain" hidden>פתיחת כל הענפים המקופלים</button>
       <label class="dep">דורות סביב האדם במרכז <select id="optDepth"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
       <p class="stor" id="vcount"></p>
       <p class="stor" id="stor"></p>
@@ -363,6 +423,7 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
   </div>
   <div class="seg" role="group" aria-label="תצוגה">
     <button id="bTree" aria-pressed="true">עץ</button>
+    <button id="bFam" aria-pressed="false">משפחה</button>
     <button id="bTime" aria-pressed="false">גיל</button>
     <button id="bBub" aria-pressed="false">בועות</button>
   </div></div>
@@ -394,6 +455,14 @@ h1{font-size:1.05rem;background:var(--surface);padding:7px 14px;border-radius:99
     <button id="bFirst" class="addbtn">+ הוספת האדם הראשון</button>
     <p class="small">כבר יש לך קובץ גיבוי? טוענים אותו מ־⚙ ← "טעינת גיבוי מקובץ".</p>
   </div>
+  <section id="fam" class="fam" hidden aria-label="תצוגת משפחה">
+    <div class="fnav">
+      <button id="fBack" class="fbtn" aria-label="חזרה לאדם הקודם">→ חזרה</button>
+      <button id="fHome" class="fbtn" aria-label="חזרה לאדם הראשי">⌂ בית</button>
+      <ol id="fCrumbs" class="crumbs" aria-label="אנשים שביקרת בהם"></ol>
+    </div>
+    <div id="fBody" class="fbody"></div>
+  </section>
   <aside id="panel" hidden aria-live="polite"></aside>
 </main>
 <div id="pickBar" class="pickbar" hidden role="status"><span>הקש על האדם בעץ</span><button id="pickCancel">ביטול</button></div>
@@ -784,9 +853,40 @@ lanes(TV,'x',lane); if(horiz) lanes(T,'y',laneH);
 const VIS=[], VS=new Set();
 let viewAll=null, depth=3, focusId=D.focus||null, forceVis=null;
 const isAll=()=>viewAll??true; // whole tree by default; only what is on screen gets drawn (cull)
+/* ---------- folding branches: a folded couple hides everyone below it ---------- */
+// קיפול ענפים: זוג מקופל מסתיר את כל הצאצאים שלו (ואת בני הזוג שלהם שאין להם הורים בעץ). נשמר במכשיר.
+let folded=new Set(); try{ folded=new Set(JSON.parse(localStorage.getItem('ft-fold')||'[]')); }catch(e){}
+const saveFold=()=>{ try{ localStorage.setItem('ft-fold',JSON.stringify([...folded])); }catch(e){} };
+const foldN={}; // union id -> how many people the fold hides
+function below(u){ // everyone under a couple
+  const out=new Set(), st=[...u.children];
+  while(st.length){ const c=st.pop(); if(out.has(c)||!people[c]) continue; out.add(c);
+    for(const v of unionsOf(c)){ const o=other(v,c); if(o&&!parentsU(o)&&!out.has(o)){ out.add(o); for(const w of unionsOf(o)) st.push(...w.children); } st.push(...v.children); } }
+  return out;
+}
+function foldHidden(){
+  const hid=new Set(); for(const k in foldN) delete foldN[k];
+  for(const uid of [...folded]){ const u=unions.find(x=>x.id===uid); if(!u||!u.children.length){ folded.delete(uid); continue; }
+    const b=below(u); foldN[uid]=b.size; b.forEach(x=>hid.add(x)); }
+  return hid;
+}
+function unfoldTo(id){ // open whatever fold hides this person
+  let changed=false;
+  for(const uid of [...folded]){ const u=unions.find(x=>x.id===uid); if(u&&below(u).has(id)){ folded.delete(uid); changed=true; } }
+  if(changed){ saveFold(); relayout(); }
+}
+function toggleFold(uid){
+  const u=unions.find(x=>x.id===uid); if(!u) return;
+  const r=stageBox(), k=view.k, sx=pos[u.a].x*k+view.x, sy=pos[u.a].y*k+view.y; // keep this couple where it is on screen
+  folded.has(uid)?folded.delete(uid):folded.add(uid); saveFold();
+  relayout();
+  const TG=mode==='time'?TT:T; if(TG[u.a]) viewTarget={k,x:sx-TG[u.a].x*k,y:sy-TG[u.a].y*k};
+  syncFoldOpt();
+}
 function computeVisible(){
   VIS.length=0; VS.clear();
-  const add=i=>{ if(i&&people[i]&&!VS.has(i)){ VS.add(i); VIS.push(i); } };
+  const hid=foldHidden();
+  const add=i=>{ if(i&&people[i]&&!VS.has(i)&&!hid.has(i)){ VS.add(i); VIS.push(i); } };
   if(isAll()||!ids.length){ ids.forEach(add); return; }
   if(!focusId||!people[focusId]) focusId=selected&&people[selected]?selected:ids[0];
   const blood=new Set([focusId]);
@@ -827,6 +927,7 @@ function relayout(){
   const vc=document.getElementById('vcount');
   if(vc) vc.textContent=ids.length?`מוצגים ${VIS.length.toLocaleString('en')} מתוך ${ids.length.toLocaleString('en')} אנשים`:'';
   if(typeof highlight==='function'&&nodeEl) highlight();
+  if(mode==='family'&&typeof renderFam==='function') renderFam(false);
 }
 
 /* ---------- build SVG ---------- */
@@ -834,7 +935,7 @@ const svg=document.getElementById('stage'), world=document.getElementById('world
 const gNodes=document.getElementById('nodes'), gLinks=document.getElementById('links');
 // the stage size is cached: asking the browser every frame forces a full re-layout of a big tree
 let stageR=null, headerH=0;
-const stageBox=()=>stageR||(stageR=svg.getBoundingClientRect());
+const stageBox=()=>{ if(stageR) return stageR; const r=svg.getBoundingClientRect(); if(r.width) stageR=r; return r; }; // never cache the size of a hidden stage
 addEventListener('resize',()=>{ stageR=null; headerH=0; cullDirty=true; });
 const pos={}, lastP={}; let linksDirty=true;
 const nodeEl={}, linkEl={};
@@ -869,8 +970,10 @@ function buildLinks(){
     if(!linkEl[u.id]){
       const g=document.createElementNS('http://www.w3.org/2000/svg','g');
       g.innerHTML=`<path class="kc"/><path class="kids"/><path class="kids-ad"/><path class="mar-o"/><path class="mar-i"/>
-        <g class="uadd" data-u="${u.id}" role="button" tabindex="0"><circle class="hit" r="17"/><circle class="bg" r="10"/><path d="M-4.5,0H4.5M0,-4.5V4.5"/></g><path class="kids rest"/>`;
-      gLinks.appendChild(g); linkEl[u.id]={g,kc:g.children[0],kids:g.children[1],ad:g.children[2],mo:g.children[3],mi:g.children[4],badge:g.children[5],rest:g.children[6]};
+        <g class="uadd" data-u="${u.id}" role="button" tabindex="0"><circle class="hit" r="17"/><circle class="bg" r="10"/><path d="M-4.5,0H4.5M0,-4.5V4.5"/></g><path class="kids rest"/>
+        <g class="fold" data-u="${u.id}" role="button" tabindex="0"><circle class="hit" r="16"/><rect class="bg" x="-11" y="-9" width="22" height="18" rx="9"/><text text-anchor="middle" dy="0.35em"></text></g>`;
+      gLinks.appendChild(g); linkEl[u.id]={g,kc:g.children[0],kids:g.children[1],ad:g.children[2],mo:g.children[3],mi:g.children[4],badge:g.children[5],rest:g.children[6],fold:g.children[7]};
+      g.children[7].addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleFold(u.id); } });
       g.children[5].addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); addToCouple(u.id); } });
     }
     const g=linkEl[u.id].g, dim=g.classList.contains('dim'), bd=linkEl[u.id].badge;
@@ -918,6 +1021,7 @@ function drawLinks(){
     let d='', dd='', rd='';
     const keep=hlKids&&hlKids.get(u.id), main=keep?u.children.filter(c=>keep.has(c)):u.children, rest=keep?u.children.filter(c=>!keep.has(c)):[];
     const allAd=main.every(c=>u.adopted.includes(c));
+    let jx=null, jy=null; // where the fold control sits
     if(u.children.length){
       if(isH()){
         const sx=b?mx:mx+70, cx=Math.min(...u.children.map(c=>pos[c].x));
@@ -927,6 +1031,7 @@ function drawLinks(){
         if(allAd) dd+=stem; else d+=stem;
         for(const c of main){ const seg=`M${bar},${pos[c].y}H${pos[c].x-70}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
         if(rest.length){ const ry=rest.map(c=>pos[c].y).concat(my); rd+=`M${bar},${Math.min(...ry)}V${Math.max(...ry)}`; for(const c of rest) rd+=`M${bar},${pos[c].y}H${pos[c].x-70}`; }
+        jx=bar; jy=my;
       } else if(mode!=='bubble'){
         const sy=b?my:my+HH, cy=Math.min(...u.children.map(c=>pos[c].y));
         const bar=mode==='time'?Math.min(Math.max(a.y,b?b.y:a.y)+46+Math.min(lane[u.id]||0,4)*13,cy-44):my+(cy-my)*(.3+(lane[u.id]||0)*.1);
@@ -935,13 +1040,27 @@ function drawLinks(){
         if(allAd) dd+=stem; else d+=stem;
         for(const c of main){ const seg=`M${pos[c].x},${bar}V${pos[c].y-HH}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
         if(rest.length){ const rx=rest.map(c=>pos[c].x).concat(mx); rd+=`M${Math.min(...rx)},${bar}H${Math.max(...rx)}`; for(const c of rest) rd+=`M${pos[c].x},${bar}V${pos[c].y-HH}`; }
+        jx=mx; jy=bar;
       } else {
         for(const c of main){ const seg=`M${mx},${my}L${pos[c].x},${pos[c].y}`; if(u.adopted.includes(c)) dd+=seg; else d+=seg; }
         for(const c of rest) rd+=`M${mx},${my}L${pos[c].x},${pos[c].y}`;
       }
     }
+    const isFold=folded.has(u.id)&&mode!=='bubble';
+    if(isFold){ // short stub to the "+N" pill
+      if(isH()){ const sx=b?mx:mx+70; d+=`M${sx},${my}H${mx+70+34}`; jx=mx+70+34+14; jy=my; }
+      else { const sy=b?my:my+HH; d+=`M${mx},${sy}V${my+HH+30}`; jx=mx; jy=my+HH+30+9; }
+    }
     L.kc.setAttribute('d',d+dd); L.kids.setAttribute('d',d); L.ad.setAttribute('d',dd); L.rest.setAttribute('d',rd);
     if(b) L.badge.setAttribute('transform',`translate(${mx.toFixed(1)},${my.toFixed(1)})`);
+    const F=L.fold;
+    if(jx==null||mode==='bubble'||!u0.children.length){ F.style.display='none'; }
+    else {
+      F.style.display=''; F.setAttribute('transform',`translate(${jx.toFixed(1)},${jy.toFixed(1)})`);
+      const txt=isFold?'+'+(foldN[u.id]||''):'−', w=isFold?Math.max(26,10+txt.length*8):20;
+      if(F._t!==txt){ F._t=txt; F.querySelector('text').textContent=txt; const bg=F.querySelector('.bg'); bg.setAttribute('x',-w/2); bg.setAttribute('width',w);
+        F.classList.toggle('on',isFold); F.setAttribute('aria-label',isFold?`פתיחת הענף (${foldN[u.id]} אנשים)`:`קיפול הצאצאים של ${people[u.a].first}${u.b?' ו'+people[u.b].first:''}`); }
+    }
   }
 }
 // draw only what is on screen (plus a margin): off-screen cards and lines are taken out of the page, so even a very large tree stays smooth
@@ -1051,8 +1170,8 @@ svg.addEventListener('pointerdown',e=>{
     const [a,b]=[...pts.values()]; dragging=null;
     gest={type:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y),k0:view.k,mx:(a.x+b.x)/2,my:(a.y+b.y)/2,vx0:view.x,vy0:view.y}; return;
   }
-  const n=e.target.closest('.node'), ua=!n&&e.target.closest('.uadd'), l=local(e);
-  gest={type:n?'node':ua?'uadd':'pan',id:n?n.dataset.id:ua?ua.dataset.u:null,sx:l.x,sy:l.y,vx0:view.x,vy0:view.y,moved:false};
+  const n=e.target.closest('.node'), ua=!n&&e.target.closest('.uadd'), fo=!n&&!ua&&e.target.closest('.fold'), l=local(e);
+  gest={type:n?'node':ua?'uadd':fo?'fold':'pan',id:n?n.dataset.id:ua?ua.dataset.u:fo?fo.dataset.u:null,sx:l.x,sy:l.y,vx0:view.x,vy0:view.y,moved:false};
 });
 svg.addEventListener('pointermove',e=>{
   if(!pts.has(e.pointerId)) return;
@@ -1072,7 +1191,7 @@ svg.addEventListener('pointermove',e=>{
 });
 function endPtr(e){
   pts.delete(e.pointerId);
-  if(gest&&gest.type!=='pinch'&&!gest.moved){ gest.type==='node'?tapNode(gest.id):gest.type==='uadd'?addToCouple(gest.id):deselect(); }
+  if(gest&&gest.type!=='pinch'&&!gest.moved){ gest.type==='node'?tapNode(gest.id):gest.type==='uadd'?addToCouple(gest.id):gest.type==='fold'?toggleFold(gest.id):deselect(); }
   if(!gest||gest.type!=='pinch'||pts.size===0){ gest=null; dragging=null; }
 }
 svg.addEventListener('pointerup',endPtr); svg.addEventListener('pointercancel',endPtr);
@@ -1083,7 +1202,7 @@ document.getElementById('zOut').onclick=()=>zc(.8);
 document.getElementById('zFit').onclick=()=>{ viewTarget=fitTarget(); };
 
 /* ---------- mode toggle ---------- */
-const bTree=document.getElementById('bTree'), bBub=document.getElementById('bBub'), bTime=document.getElementById('bTime'), hint=document.getElementById('hint');
+const bTree=document.getElementById('bTree'), bBub=document.getElementById('bBub'), bTime=document.getElementById('bTime'), bFam=document.getElementById('bFam'), hint=document.getElementById('hint');
 function drawGrid(){ // decade grid for the age view
   if(!ids.length){ document.getElementById('grid').innerHTML=''; return; }
   if(!VIS.length){ document.getElementById('grid').innerHTML=''; return; }
@@ -1101,12 +1220,70 @@ function setMode(m){
   if(m==='bubble'&&VIS.length>300){ toast('תצוגת בועות מתאימה עד 300 אנשים. כבה את "הצגת כל העץ" בהגדרות כדי לראות בועות סביב אדם אחד.'); return; }
   mode=m; linksDirty=true;
   svg.classList.toggle('bubble',m==='bubble'); svg.classList.toggle('time',m==='time');
-  bTree.setAttribute('aria-pressed',m==='tree'); bBub.setAttribute('aria-pressed',m==='bubble'); bTime.setAttribute('aria-pressed',m==='time');
+  bTree.setAttribute('aria-pressed',m==='tree'); bBub.setAttribute('aria-pressed',m==='bubble'); bTime.setAttribute('aria-pressed',m==='time'); bFam.setAttribute('aria-pressed',m==='family');
+  famEl.hidden=m!=='family'; mainEl.classList.toggle('famon',m==='family');
+  if(m==='family'){ panelEl.hidden=true; mainEl.classList.remove('open'); famGo(selected&&people[selected]?selected:famId&&people[famId]?famId:homeOf(),false); return; }
+  stageR=null; cullDirty=true; miniDirty=true; // the stage was hidden in the family view
   hint.textContent=m==='bubble'?'אפשר לגרור בועות. לחיצה פותחת כרטיס':m==='time'?'הגובה של כל אדם לפי שנת הלידה שלו':'לחיצה על אדם פותחת את הכרטיס שלו';
   if(m==='bubble'){ heat=1; for(const id of VIS) pos[id].vx=0; }
   viewTarget=null; autoFit=m==='bubble'?90:55;
 }
-bTree.onclick=()=>setMode('tree'); bBub.onclick=()=>setMode('bubble'); bTime.onclick=()=>setMode('time');
+bTree.onclick=()=>setMode('tree'); bBub.onclick=()=>setMode('bubble'); bTime.onclick=()=>setMode('time'); bFam.onclick=()=>setMode('family');
+
+/* ---------- family view: one person, their parents and grandparents, spouses, children and siblings ---------- */
+// תצוגת "משפחה": אדם אחד במרכז והמשפחה הקרובה שלו. לחיצה על מישהו מעבירה אליו. "חזרה" ו"בית" כדי לא ללכת לאיבוד.
+const famEl=document.getElementById('fam'), fBody=document.getElementById('fBody'), fBack=document.getElementById('fBack'), fHome=document.getElementById('fHome'), fCrumbs=document.getElementById('fCrumbs');
+let famId=null, famHist=[], homeId=null; try{ homeId=localStorage.getItem('ft-home'); }catch(e){}
+const homeOf=()=>homeId&&people[homeId]?homeId:ids[0];
+function famGo(id,push=true){
+  if(!people[id]) id=homeOf(); if(!id){ fBody.innerHTML=''; return; }
+  if(push&&famId&&famId!==id&&people[famId]){ famHist.push(famId); if(famHist.length>30) famHist.shift(); }
+  famId=id; renderFam(true); famEl.scrollTop=0;
+  if(!panelEl.hidden&&selected!==id){ selected=id; renderPanel(); }
+}
+const fcard=(id,cls='',note='')=>{ const p=people[id];
+  return `<button class="fcard ${p.g} ${cls}" data-f="${id}">${p.photos[0]&&cls.includes('me')?`<img src="${p.photos[0]}" alt="">`:''}<span class="fn">${esc(fullName(p))}</span>${cls.includes('small')?'':`<span class="fs">${esc(note||years(p))}</span>`}</button>`; };
+function renderFam(anim){
+  if(!famId||!people[famId]){ famId=homeOf(); if(!famId){ fBody.innerHTML=''; return; } }
+  const id=famId, p=people[id], pu=parentsU(id), pars=parentsOf(id), myU=unionsOf(id);
+  let h='';
+  // grandparents, grouped by parent
+  const gp=pars.map(x=>({x,g:parentsOf(x)})).filter(o=>o.g.length);
+  if(gp.length) h+=`<div class="fsec"><div class="flabel">סבים וסבתות</div><div class="fgp">${gp.map(o=>`<div class="side"><span class="fs">הורי ${esc(people[o.x].first)}</span><div class="frow">${o.g.map(g=>fcard(g,'small')).join('')}</div></div>`).join('')}</div></div><div class="fline"></div>`;
+  // parents
+  h+=`<div class="fsec"><div class="flabel">${pu&&pu.adopted.includes(id)?'הורים מאמצים':'הורים'}</div><div class="frow">${pars.map(x=>fcard(x)).join('')}${pars.length<2?`<button class="fadd" data-fa="parent">+ הוספת הורה</button>`:''}</div></div>`;
+  if(pars.length) h+='<div class="fline"></div>';
+  // the person, with spouses
+  const sps=myU.filter(u=>u.b);
+  h+=`<div class="fsec"><div class="fme">${fcard(id,'me',[years(p),p.place].filter(Boolean).join(' · '))}${sps.map(u=>`<span class="fring ${u.end==='divorce'?'div':''}"><i></i>${esc(unionNote(u)||(u.end==='divorce'?'גרושים':''))}</span>${fcard(other(u,id))}`).join('')}</div>
+    ${id===homeOf()?'<span class="fhome">⌂ האדם הראשי</span>':''}
+    <div class="fact"><button class="pri" data-fx="details">פרטים מלאים</button><button data-fx="tree">הצגה בעץ</button>${id!==homeOf()?'<button data-fx="home">קביעה כאדם הראשי</button>':''}<button data-fa="spouse">+ ${p.g==='f'?'בן זוג':'בת זוג'}</button></div></div>`;
+  // children, grouped by the other parent when there is more than one
+  const kidUs=myU.filter(u=>u.children.length);
+  h+='<div class="fline"></div><div class="fsec"><div class="flabel">ילדים</div>';
+  for(const u of kidUs){ const o=other(u,id);
+    h+=`<div class="fgroup">${kidUs.length>1?`<h4>${o?'עם '+esc(people[o].first):'הורה יחיד'}</h4>`:''}<div class="fgrid">${u.children.map(c=>fcard(c,'',u.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'')).join('')}</div></div>`; }
+  h+=`<button class="fadd" data-fa="kids">+ הוספת ילדים</button></div>`;
+  // siblings and half-siblings
+  const sibs=pu?pu.children.filter(c=>c!==id):[], halves=[];
+  for(const par of pars) for(const u of unionsOf(par)) if(u!==pu) for(const c of u.children) if(!halves.includes(c)) halves.push(c);
+  if(sibs.length||pars.length) h+=`<div class="fsec" style="margin-top:14px"><div class="flabel">אחים</div><div class="fgrid">${sibs.map(c=>fcard(c)).join('')}</div>${pars.length?'<button class="fadd" data-fa="sibling">+ אח או אחות</button>':''}</div>`;
+  if(halves.length) h+=`<div class="fsec" style="margin-top:10px"><div class="flabel">אחים למחצה</div><div class="fgrid">${halves.map(c=>fcard(c)).join('')}</div></div>`;
+  fBody.innerHTML=h;
+  if(anim){ fBody.classList.remove('anim'); void fBody.offsetWidth; fBody.classList.add('anim'); }
+  fBody.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ if(b.dataset.f!==famId) famGo(b.dataset.f); });
+  fBody.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{ const a=b.dataset.fa; a==='kids'?openKids(id):openAdd(a,id); });
+  fBody.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{ const x=b.dataset.fx;
+    if(x==='details'){ selected=id; trace=null; renderPanel(); panelEl.classList.remove('peek'); panelEl.hidden=false; mainEl.classList.add('open'); }
+    else if(x==='tree'){ setMode('tree'); select(id,true); }
+    else if(x==='home'){ homeId=id; try{ localStorage.setItem('ft-home',id); }catch(e){} renderFam(false); toast(`${people[id].first} ${people[id].g==='f'?'נקבעה':'נקבע'} כאדם הראשי. "בית" יחזיר לכאן.`); } });
+  fBack.disabled=!famHist.some(x=>people[x]);
+  const trail=[...famHist.filter(x=>people[x]).slice(-3),id];
+  fCrumbs.innerHTML=trail.map((x,i)=>`<li><button data-c="${i}" ${i===trail.length-1?'aria-current="page"':''}>${esc(people[x].first)}</button></li>`).join('');
+  fCrumbs.querySelectorAll('button').forEach((b,i)=>{ if(i<trail.length-1) b.onclick=()=>{ const x=trail[i]; const at=famHist.lastIndexOf(x); if(at>=0) famHist.length=at; famGo(x,false); }; });
+}
+fBack.onclick=()=>{ while(famHist.length){ const x=famHist.pop(); if(people[x]){ famGo(x,false); return; } } };
+fHome.onclick=()=>{ const h=homeOf(); if(h&&h!==famId) famGo(h); };
 
 /* ---------- selection & panel ---------- */
 let selected=null;
@@ -1140,6 +1317,8 @@ function highlight(){
   hlKids=lin?lin.on:null; linksDirty=true;
 }
 function select(id,center){
+  if(mode==='family'){ famGo(id); return; }
+  if(people[id]&&!VS.has(id)&&folded.size){ unfoldTo(id); center=true; }
   if(!isAll()&&(focusId!==id||forceVis)){ focusId=id; forceVis=null; selected=id; trace=null; relayout(); center=true; }
   else if(forceVis){ forceVis=null; }
   selected=id; trace=null; highlight(); renderPanel();
@@ -1389,6 +1568,10 @@ const endMini=()=>{ mdrag=null; miniDirty=true; };
 mini.addEventListener('pointerup',endMini); mini.addEventListener('pointercancel',endMini);
 mini.addEventListener('wheel',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
 addEventListener('resize',()=>{ miniDirty=true; });
+const bUnfold=document.getElementById('bUnfold');
+function syncFoldOpt(){ bUnfold.hidden=!folded.size; if(folded.size) bUnfold.textContent=`פתיחת כל הענפים המקופלים (${folded.size})`; }
+bUnfold.onclick=()=>{ folded.clear(); saveFold(); relayout(); syncFoldOpt(); autoFit=45; };
+syncFoldOpt();
 const optHoriz=document.getElementById('optHoriz');
 optHoriz.checked=horiz;
 optHoriz.onchange=()=>{ horiz=optHoriz.checked; try{ localStorage.setItem('ft-horiz',horiz?'1':'0'); }catch(e){} if(mode!=='tree') setMode('tree'); relayout(); linksDirty=true; autoFit=45; };
@@ -1904,6 +2087,7 @@ fAdd.addEventListener('submit',e=>{
   toast(`${first} ${g==='f'?'נוספה':'נוסף'} לעץ.`);
 });
 function afterAdd(id,anchor){
+  if(mode==='family'){ relayout(); return; } // stay on the same family; the new person appears in it
   if(!isAll()) focusId=anchor||id;
   relayout();
   if(anchor&&pos[anchor]&&pos[id]){ pos[id].x=pos[anchor].x; pos[id].y=pos[anchor].y; delete lastP[id]; }
