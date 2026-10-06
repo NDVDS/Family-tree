@@ -138,14 +138,44 @@ main.famon #stage,main.famon .zoom,main.famon #bLegend,main.famon #legend{displa
 .fbody.anim{animation:fin .22s ease}
 @keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.fbody.anim{animation:none}}
-.fsec{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px}
-.flabel{font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.02em;margin:2px 0 0}
-.frow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;width:100%}
-.fgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
-.fgrid .fcard{flex:0 1 160px}
-.fline{width:2px;height:22px;background:var(--line);opacity:.6;margin:4px 0}
-.fcard{border:2.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:9px 12px;cursor:pointer;text-align:center;font:inherit;min-width:140px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .12s,box-shadow .12s}
-.fcard:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.fbox{position:relative;width:100%;max-width:460px;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:10px 12px 14px;margin:0 0 14px;box-sizing:border-box}
+.fh{margin:0 0 10px;font:700 .8rem "Assistant",sans-serif;color:var(--muted);text-align:center;letter-spacing:.02em}
+.fh small{font-weight:600}
+.flines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.flines path{fill:none;stroke-width:2;stroke-linecap:round}
+.flines .l{stroke:var(--muted);opacity:.55} .flines .ld{stroke:var(--muted);opacity:.45;stroke-dasharray:4 4}
+.flines .w{stroke:var(--gold);stroke-width:4} .flines .wd{stroke:var(--gold);stroke-width:3;stroke-dasharray:6 4}
+.fgps,.fcpl,.fkids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:12px;position:relative}
+.fgps.one,.fcpl.one{grid-template-columns:minmax(0,190px);justify-content:center}
+.fgps{margin-bottom:22px}
+.fgpc{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.fwed{position:relative;width:max-content;max-width:100%;margin:6px auto 0;padding:1px 8px;background:var(--surface);color:var(--gold);font-size:.74rem;font-weight:700;border-radius:8px;text-align:center}
+.fkids{margin-top:22px}
+.fkids.nl{margin-top:6px}
+.fkids .me{grid-column:1/-1}
+.fcard{position:relative;border:2.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:8px 10px;cursor:pointer;text-align:center;font:inherit;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform .12s,box-shadow .12s;box-sizing:border-box}
+button.fcard:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.fcard.small{padding:5px 8px;border-width:2px}
+.fcard.small .fn{font-size:.86rem}
+.fcard.self{background:var(--bg);cursor:default;border-style:solid}
+.fcard.self .fs{font-weight:700}
+.fcard.fph{border-style:dashed;border-color:var(--line);background:none;color:var(--muted);font:600 .86rem "Assistant",sans-serif;min-height:44px}
+.fmore{font-size:.72rem;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px;margin-top:3px}
+.fcard.me{padding:14px 14px 12px;box-shadow:var(--shadow);border-width:3px}
+.fcard.me .fn{font-size:1.4rem}
+.fcard.me img{width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:4px}
+.fmeb{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.fmeb:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:6px}
+.fmeb .ftap{font-size:.72rem;color:var(--muted);margin-top:4px}
+.fdots{position:absolute;inset-inline-end:6px;top:6px;width:34px;height:34px;border:0;border-radius:50%;background:var(--bg);color:var(--ink);font:800 1.1rem "Assistant",sans-serif;cursor:pointer;line-height:1}
+.fhomet{position:absolute;inset-inline-start:10px;top:8px;font-size:.72rem;color:var(--gold);font-weight:700}
+.fmenu{position:absolute;inset-inline-end:6px;top:44px;z-index:5;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:6px;display:flex;flex-direction:column;min-width:190px}
+.fmenu[hidden]{display:none}
+.fmenu button{border:0;background:none;color:var(--ink);font:600 .92rem "Assistant",sans-serif;padding:10px 12px;border-radius:8px;text-align:start;cursor:pointer}
+.fmenu button:hover{background:var(--bg)}
+.fh4{grid-column:1/-1;margin:4px 0 -4px;font-size:.78rem;color:var(--muted);font-weight:600;text-align:center}
+.fends{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:2px 0 8px}
+.fadd{border:1.5px dashed var(--line);background:none;color:var(--ink);font:600 .86rem "Assistant",sans-serif;padding:7px 14px;border-radius:999px;cursor:pointer}
 .fcard.m{border-color:var(--male)} .fcard.f{border-color:var(--female)}
 body.no-gender .fcard{border-color:var(--line)}
 .fcard .fn{font:700 1.02rem "Frank Ruhl Libre","David",serif;line-height:1.2}
@@ -159,28 +189,6 @@ body.no-gender .fcard{border-color:var(--line)}
 .todolist{list-style:none;margin:4px 0 0;padding:0;max-height:220px;overflow:auto}
 .todolist button{display:block;width:100%;text-align:start;border:0;background:none;color:var(--ink);font:inherit;padding:6px 4px;border-radius:8px;cursor:pointer}
 .todolist button:hover{background:var(--bg)} .todolist small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fcard img{width:44px;height:44px;border-radius:50%;object-fit:cover;margin-bottom:4px}
-.fcard.small{min-width:0;padding:5px 10px}
-.fcard.small .fn{font-size:.9rem}
-.fgp{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;width:100%;max-width:520px}
-.fgp .side{display:flex;flex-direction:column;align-items:center;gap:6px}
-.fgp .side .frow{gap:6px}
-.fme{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;row-gap:10px}
-.fme .fcard.me{min-width:200px;padding:14px 18px;box-shadow:var(--shadow)}
-.fme .fcard.me .fn{font-size:1.45rem}
-.fme .fcard.me img{width:72px;height:72px}
-.fring{display:flex;flex-direction:column;align-items:center;padding:0 6px;color:var(--gold);font-size:.72rem;font-weight:700}
-.fring i{display:block;width:26px;height:6px;border-radius:4px;background:var(--gold);position:relative}
-.fring i::after{content:"";position:absolute;inset:2px 2px;background:var(--bg);border-radius:2px}
-.fring.div i{background:none;border-top:3px dashed var(--gold);height:0}
-.fring.div i::after{display:none}
-.fact{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0 4px}
-.fact button,.fadd{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 .86rem "Assistant",sans-serif;padding:6px 12px;border-radius:999px;cursor:pointer}
-.fact .pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.fadd{border-style:dashed;background:none;align-self:center}
-.fgroup{width:100%;display:flex;flex-direction:column;gap:6px}
-.fgroup h4{margin:6px 0 0;font-size:.85rem;color:var(--muted);font-weight:600;text-align:center}
-.fhome{font-size:.75rem;color:var(--gold);font-weight:700}
 .lgbtn{position:absolute;inset-inline-start:12px;bottom:12px;border:0;background:var(--surface);color:var(--ink);font:600 .9rem "Assistant",sans-serif;padding:8px 14px;border-radius:999px;box-shadow:var(--shadow);cursor:pointer}
 .lgbtn[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
 .legend{position:absolute;inset-inline-start:12px;bottom:56px;background:var(--surface);border-radius:14px;padding:10px 14px;box-shadow:var(--shadow);font-size:.85rem;display:grid;grid-template-columns:auto auto;gap:4px 16px;align-items:center}
@@ -1243,52 +1251,128 @@ bTree.onclick=()=>setMode('tree'); bBub.onclick=()=>setMode('bubble'); bTime.onc
 const famEl=document.getElementById('fam'), fBody=document.getElementById('fBody'), fBack=document.getElementById('fBack'), fHome=document.getElementById('fHome'), fCrumbs=document.getElementById('fCrumbs');
 let famId=null, famHist=[], homeId=null; try{ homeId=localStorage.getItem('ft-home'); }catch(e){}
 const homeOf=()=>homeId&&people[homeId]?homeId:ids[0];
-function famGo(id,push=true){
+function famGo(id,push=true,from=null){
   if(!people[id]) id=homeOf(); if(!id){ fBody.innerHTML=''; return; }
   if(push&&famId&&famId!==id&&people[famId]){ famHist.push(famId); if(famHist.length>30) famHist.shift(); }
-  famId=id; renderFam(true); famEl.scrollTop=0;
+  famId=id; renderFam(!from); famEl.scrollTop=0;
+  const me=fBody.querySelector('.fcard.me');
+  if(me){ const r=me.getBoundingClientRect(), top=famEl.getBoundingClientRect().top;
+    if(r.bottom>top+famEl.clientHeight-20) famEl.scrollTop=r.top-top-famEl.clientHeight*.3; }
+  if(from&&me) flyFrom(me,from);
   if(!panelEl.hidden&&selected!==id){ selected=id; renderPanel(); }
 }
-const fcard=(id,cls='',note='')=>{ const p=people[id];
-  return `<button class="fcard ${p.g} ${cls}" data-f="${id}">${p.photos[0]&&cls.includes('me')?`<img src="${p.photos[0]}" alt="">`:''}<span class="fn">${typeof p.todo==='string'?'<i class="ftodo" title="להשלמה">!</i>':''}${esc(fullName(p))}</span>${cls.includes('small')?'':`<span class="fs">${esc(note||years(p))}</span>`}</button>`; };
+// the card you tapped glides into the middle, so you can see where you went
+function flyFrom(el,r0){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!el.animate) return;
+  const r=el.getBoundingClientRect(); if(!r.width) return;
+  el.animate([{transformOrigin:'0 0',transform:`translate(${r0.left-r.left}px,${r0.top-r.top}px) scale(${r0.width/r.width},${r0.height/r.height})`},{transformOrigin:'0 0',transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.8,.2,1)'});
+  const rest=[...fBody.children]; rest.forEach(b=>b.animate([{opacity:.25},{opacity:1}],{duration:320,easing:'ease-out'}));
+}
+const kidsN=x=>unionsOf(x).reduce((n,u)=>n+u.children.length,0);
+// תג קטן שמראה שיש עוד משפחה מעבר לכרטיס: ילדים (למטה) או הורים (למעלה)
+function fmore(id,up){
+  if(up) return parentsOf(id).length?'<span class="fmore">▲ הורים</span>':'';
+  const n=kidsN(id); return n?`<span class="fmore">▼ ${n===1?'ילד אחד':n+' ילדים'}</span>`:'';
+}
+const fcard=(id,cls='',note='',more='')=>{ const p=people[id];
+  return `<button class="fcard ${p.g} ${cls}" data-f="${id}"><span class="fn">${typeof p.todo==='string'?'<i class="ftodo" title="להשלמה">!</i>':''}${esc(fullName(p))}</span>${cls.includes('small')?'':`<span class="fs">${esc(note||years(p))}</span>`}${more}</button>`; };
+const fph=(attr,label)=>`<button class="fcard fph" ${attr}>+ ${label}</button>`;
 function renderFam(anim){
   if(!famId||!people[famId]){ famId=homeOf(); if(!famId){ fBody.innerHTML=''; return; } }
-  const id=famId, p=people[id], pu=parentsU(id), pars=parentsOf(id), myU=unionsOf(id);
+  const id=famId, p=people[id], pu=parentsU(id), pars=parentsOf(id), myU=unionsOf(id), isHome=id===homeOf();
+  const meCard=`<div class="fcard me ${p.g}" data-me>
+      ${isHome?'<span class="fhomet">⌂ הבית</span>':''}
+      <button class="fdots" aria-label="פעולות נוספות" aria-expanded="false" aria-haspopup="true">⋯</button>
+      <div class="fmenu" hidden role="menu">
+        <button role="menuitem" data-fx="details">פרטים מלאים</button>
+        <button role="menuitem" data-fx="tree">הצגה בעץ</button>
+        ${isHome?'':'<button role="menuitem" data-fx="home">קביעה כ"בית" (נקודת ההתחלה)</button>'}
+      </div>
+      <button class="fmeb" data-fx="details" aria-label="${esc(fullName(p))}: פתיחת הפרטים המלאים">
+        ${p.photos[0]?`<img src="${p.photos[0]}" alt="">`:''}
+        <span class="fn">${typeof p.todo==='string'?'<i class="ftodo" title="להשלמה">!</i>':''}${esc(fullName(p))}</span>
+        <span class="fs">${esc([years(p),p.place].filter(Boolean).join(' · '))}</span>
+        <span class="ftap">לחיצה לפרטים</span>
+      </button></div>`;
   let h='';
-  // grandparents, grouped by parent
-  const gp=pars.map(x=>({x,g:parentsOf(x)})).filter(o=>o.g.length);
-  if(gp.length) h+=`<div class="fsec"><div class="flabel">סבים וסבתות</div><div class="fgp">${gp.map(o=>`<div class="side"><span class="fs">הורי ${esc(people[o.x].first)}</span><div class="frow">${o.g.map(g=>fcard(g,'small')).join('')}</div></div>`).join('')}</div></div><div class="fline"></div>`;
-  // parents
-  h+=`<div class="fsec"><div class="flabel">${pu&&pu.adopted.includes(id)?'הורים מאמצים':'הורים'}</div><div class="frow">${pars.map(x=>fcard(x)).join('')}${pars.length<2?`<button class="fadd" data-fa="parent">+ הוספת הורה</button>`:''}</div></div>`;
-  if(pars.length) h+='<div class="fline"></div>';
-  // the person, with spouses
-  const sps=myU.filter(u=>u.b);
-  h+=`<div class="fsec"><div class="fme">${fcard(id,'me',[years(p),p.place].filter(Boolean).join(' · '))}${sps.map(u=>`<span class="fring ${u.end==='divorce'?'div':''}"><i></i>${esc(unionNote(u)||(u.end==='divorce'?'גרושים':''))}</span>${fcard(other(u,id))}`).join('')}</div>
-    ${id===homeOf()?'<span class="fhome">⌂ האדם הראשי</span>':''}
-    <div class="fact"><button class="pri" data-fx="details">פרטים מלאים</button><button data-fx="tree">הצגה בעץ</button>${id!==homeOf()?'<button data-fx="home">קביעה כאדם הראשי</button>':''}<button data-fa="spouse">+ ${p.g==='f'?'בן זוג':'בת זוג'}</button></div></div>`;
-  // children, grouped by the other parent when there is more than one
-  const kidUs=myU.filter(u=>u.children.length);
-  h+='<div class="fline"></div><div class="fsec"><div class="flabel">ילדים</div>';
-  for(const u of kidUs){ const o=other(u,id);
-    h+=`<div class="fgroup">${kidUs.length>1?`<h4>${o?'עם '+esc(people[o].first):'הורה יחיד'}</h4>`:''}<div class="fgrid">${u.children.map(c=>fcard(c,'',u.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'')).join('')}</div></div>`; }
-  h+=`<button class="fadd" data-fa="kids">+ הוספת ילדים</button></div>`;
-  // siblings and half-siblings
-  const sibs=pu?pu.children.filter(c=>c!==id):[], halves=[];
-  for(const par of pars) for(const u of unionsOf(par)) if(u!==pu) for(const c of u.children) if(!halves.includes(c)) halves.push(c);
-  if(sibs.length||pars.length) h+=`<div class="fsec" style="margin-top:14px"><div class="flabel">אחים</div><div class="fgrid">${sibs.map(c=>fcard(c)).join('')}</div>${pars.length?'<button class="fadd" data-fa="sibling">+ אח או אחות</button>':''}</div>`;
-  if(halves.length) h+=`<div class="fsec" style="margin-top:10px"><div class="flabel">אחים למחצה</div><div class="fgrid">${halves.map(c=>fcard(c)).join('')}</div></div>`;
+  // 1. parents (and their parents) with all their children: the person and the siblings
+  const cols=[...pars], nCol=pars.length?2:1;
+  const gpOf=pars.map(x=>parentsOf(x));
+  h+=`<section class="fbox">${pars.length?`<h3 class="fh">${pu&&pu.adopted.includes(id)?'הורים מאמצים ואחים':'הורים ואחים'}</h3>`:''}`;
+  if(gpOf.some(g=>g.length)) h+=`<div class="fgps ${nCol===1?'one':''}">${cols.map((x,i)=>`<div class="fgpc" data-to="${x}">${gpOf[i].map(g=>fcard(g,'small','',fmore(g,true))).join('')}</div>`).join('')}${pars.length===1?'<div class="fgpc"></div>':''}</div>`;
+  h+=`<div class="fcpl ${nCol===1?'one':''} ${pu&&pu.end==='divorce'?'div':''}">${pars.map(x=>fcard(x)).join('')}${pars.length<2?fph('data-fa="parent"','הוספת הורה'):''}</div>`;
+  if(pu&&pu.b&&unionNote(pu)) h+=`<div class="fwed">${esc(unionNote(pu))}</div>`;
+  const sibKids=pu?pu.children:[id];
+  h+=`<div class="fkids">${sibKids.map(c=>c===id?meCard:fcard(c,'',pu&&pu.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${pars.length?fph('data-fa="sibling"','אח או אחות'):''}</div></section>`;
+  // 2. half-siblings, grouped by the shared parent
+  let half='';
+  for(const par of pars) for(const u of unionsOf(par)) if(u!==pu&&u.children.length){ const o=other(u,par);
+    half+=`<div class="fh4">ילדים של ${esc(people[par].first)}${o?' ו'+esc(people[o].first):''}</div>${u.children.map(c=>fcard(c,'','',fmore(c))).join('')}`; }
+  if(half) h+=`<section class="fbox"><h3 class="fh">אחים למחצה</h3><div class="fkids nl">${half}</div></section>`;
+  // 3. each marriage with its children
+  for(const u of myU){ const o=other(u,id); if(!o&&!u.children.length) continue;
+    const self=`<div class="fcard self ${p.g}"><span class="fn">${esc(fullName(p))}</span></div>`;
+    h+=`<section class="fbox"><h3 class="fh">${o?`המשפחה עם ${esc(people[o].first)}`:'ילדים'}</h3>
+      <div class="fcpl ${o?'':'one'} ${u.end==='divorce'?'div':''}">${self}${o?fcard(o,'','',fmore(o,true)):''}</div>
+      ${o&&unionNote(u)?`<div class="fwed">${esc(unionNote(u))}</div>`:''}
+      <div class="fkids">${u.children.map(c=>fcard(c,'',u.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${o?fph(`data-fu="${u.id}"`,'ילד'):fph('data-fa="kids"','ילד')}</div></section>`; }
+  h+=`<div class="fends"><button class="fadd" data-fa="spouse">+ ${p.g==='f'?'בן זוג':'בת זוג'}</button>${myU.some(u=>u.children.length)?'':'<button class="fadd" data-fa="kids">+ ילדים</button>'}</div>`;
   fBody.innerHTML=h;
   if(anim){ fBody.classList.remove('anim'); void fBody.offsetWidth; fBody.classList.add('anim'); }
-  fBody.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ if(b.dataset.f!==famId) famGo(b.dataset.f); });
+  fBody.querySelectorAll('button[data-f]').forEach(b=>b.onclick=()=>{ if(b.dataset.f!==famId) famGo(b.dataset.f,true,b.getBoundingClientRect()); });
   fBody.querySelectorAll('[data-fa]').forEach(b=>b.onclick=()=>{ const a=b.dataset.fa; a==='kids'?openKids(id):openAdd(a,id); });
-  fBody.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{ const x=b.dataset.fx;
+  fBody.querySelectorAll('[data-fu]').forEach(b=>b.onclick=()=>addToCouple(b.dataset.fu));
+  const dots=fBody.querySelector('.fdots'), menu=fBody.querySelector('.fmenu');
+  dots.onclick=e=>{ e.stopPropagation(); menu.hidden=!menu.hidden; dots.setAttribute('aria-expanded',String(!menu.hidden)); if(!menu.hidden) menu.querySelector('button').focus(); };
+  fBody.querySelectorAll('[data-fx]').forEach(b=>b.onclick=()=>{ const x=b.dataset.fx; menu.hidden=true;
     if(x==='details'){ selected=id; trace=null; renderPanel(); panelEl.classList.remove('peek'); panelEl.hidden=false; mainEl.classList.add('open'); }
     else if(x==='tree'){ setMode('tree'); select(id,true); }
-    else if(x==='home'){ homeId=id; try{ localStorage.setItem('ft-home',id); }catch(e){} renderFam(false); toast(`${people[id].first} ${people[id].g==='f'?'נקבעה':'נקבע'} כאדם הראשי. "בית" יחזיר לכאן.`); } });
+    else if(x==='home'){ homeId=id; try{ localStorage.setItem('ft-home',id); }catch(e){} renderFam(false); toast(`${people[id].first} ${people[id].g==='f'?'נקבעה':'נקבע'} כ"בית". הכפתור "בית" יחזיר לכאן.`); } });
   fBack.disabled=!famHist.some(x=>people[x]);
   const trail=[...famHist.filter(x=>people[x]).slice(-3),id];
   fCrumbs.innerHTML=trail.map((x,i)=>`<li><button data-c="${i}" ${i===trail.length-1?'aria-current="page"':''}>${esc(people[x].first)}</button></li>`).join('');
   fCrumbs.querySelectorAll('button').forEach((b,i)=>{ if(i<trail.length-1) b.onclick=()=>{ const x=trail[i]; const at=famHist.lastIndexOf(x); if(at>=0) famHist.length=at; famGo(x,false); }; });
+  drawFamLines();
+}
+// קווים כמו בעץ: קו נישואין זהוב בין בני הזוג, ומהאמצע שלו "גזע" שיורד לכל הילדים
+function drawFamLines(){
+  for(const box of fBody.querySelectorAll('.fbox')){
+    let svg=box.querySelector(':scope>.flines');
+    if(!svg){ box.insertAdjacentHTML('afterbegin','<svg class="flines" aria-hidden="true"><path class="l"/><path class="ld"/><path class="w"/><path class="wd"/></svg>'); svg=box.firstElementChild; }
+    const B=box.getBoundingClientRect(), R=e=>{ const r=e.getBoundingClientRect(); return {l:r.left-B.left,r:r.right-B.left,t:r.top-B.top,b:r.bottom-B.top,cx:(r.left+r.right)/2-B.left,cy:(r.top+r.bottom)/2-B.top}; };
+    const P={l:'',ld:'',w:'',wd:''}, f=n=>Math.round(n*10)/10;
+    // grandparents: a short marriage line between them, and a line down to their child
+    for(const c of box.querySelectorAll('.fgpc[data-to]')){
+      const g=[...c.children].map(R); if(!g.length) continue;
+      const to=box.querySelector(`.fcpl [data-f="${c.dataset.to}"]`); if(!to) continue; const t=R(to), x=(g[0].l+g[0].r)/2;
+      if(g.length>1) P.w+=`M${f(x)},${f(g[0].b)}V${f(g[1].t)}`;
+      P.l+=`M${f(x)},${f(g[g.length-1].b)}V${f((g[g.length-1].b+t.t)/2)}H${f(t.cx)}V${f(t.t)}`;
+    }
+    const cpl=box.querySelector(':scope>.fcpl'), kidsEl=box.querySelector(':scope>.fkids:not(.nl)'); if(!cpl) continue;
+    const cs=[...cpl.children].map(e=>({...R(e),ph:e.classList.contains('fph')}));
+    let tx,ty,dash=!cs.some(c=>!c.ph);
+    if(cs.length===2){ const [a,b]=cs.sort((x,y)=>x.l-y.l), y=f((a.cy+b.cy)/2);
+      if(!a.ph&&!b.ph) P[cpl.classList.contains('div')?'wd':'w']+=`M${f(a.r)},${y}H${f(b.l)}`; else P.ld+=`M${f(a.r)},${y}H${f(b.l)}`;
+      tx=(a.r+b.l)/2; ty=y; }
+    else if(cs.length===1){ tx=cs[0].cx; ty=cs[0].b; }
+    if(tx==null||!kidsEl) continue;
+    const ks=[...kidsEl.children].map(e=>({...R(e),ph:e.classList.contains('fph')}));
+    let endReal=ty, endAll=ty;
+    for(const k of ks){ const span=k.l<tx-2&&k.r>tx+2, y=span?k.t:k.cy; endAll=Math.max(endAll,y); if(!k.ph) endReal=Math.max(endReal,y);
+      if(!span) P[k.ph||dash?'ld':'l']+=`M${f(tx)},${f(k.cy)}H${f(k.r<tx?k.r:k.l)}`; }
+    if(!dash&&endReal>ty) P.l+=`M${f(tx)},${f(ty)}V${f(endReal)}`;
+    if(endAll>(dash?ty:endReal)) P.ld+=`M${f(tx)},${f(dash?ty:endReal)}V${f(endAll)}`;
+    const ps=svg.querySelectorAll('path'); ps[0].setAttribute('d',P.l); ps[1].setAttribute('d',P.ld); ps[2].setAttribute('d',P.w); ps[3].setAttribute('d',P.wd);
+  }
+}
+if(window.ResizeObserver) new ResizeObserver(()=>{ if(!famEl.hidden) requestAnimationFrame(drawFamLines); }).observe(fBody);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(!famEl.hidden) drawFamLines(); });
+document.addEventListener('click',e=>{ const m=fBody.querySelector('.fmenu'); if(m&&!m.hidden&&!e.target.closest('.fmenu,.fdots')){ m.hidden=true; fBody.querySelector('.fdots').setAttribute('aria-expanded','false'); } });
+{ // החלקה ימינה = חזרה לאדם הקודם
+  let t0=null;
+  famEl.addEventListener('touchstart',e=>{ t0=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null; },{passive:true});
+  famEl.addEventListener('touchend',e=>{ if(!t0) return; const t=e.changedTouches[0], dx=t.clientX-t0.x, dy=t.clientY-t0.y; t0=null;
+    if(dx>70&&Math.abs(dy)<Math.abs(dx)*.5&&!fBack.disabled) fBack.click(); },{passive:true});
 }
 fBack.onclick=()=>{ while(famHist.length){ const x=famHist.pop(); if(people[x]){ famGo(x,false); return; } } };
 fHome.onclick=()=>{ const h=homeOf(); if(h&&h!==famId) famGo(h); };
