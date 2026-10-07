@@ -138,21 +138,14 @@ main.famon #stage,main.famon .zoom,main.famon #bLegend,main.famon #legend{displa
 .fbody.anim{animation:fin .22s ease}
 @keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.fbody.anim{animation:none}}
-.fbox{width:100%;max-width:460px;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:10px 12px 14px;margin:0 0 14px;box-sizing:border-box}
+.fbox{position:relative;width:100%;max-width:460px;background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:10px 12px 14px;margin:0 0 14px;box-sizing:border-box}
 .fh{margin:0 0 10px;font:700 .8rem "Assistant",sans-serif;color:var(--muted);text-align:center;letter-spacing:.02em}
 .fh small{font-weight:600}
-.fbody{position:relative}
 .flines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.fmeblk{grid-column:1/-1;background:color-mix(in srgb,var(--gold) 9%,var(--surface));border-radius:16px;padding:8px;display:flex;flex-direction:column;gap:26px}
-.fsps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:14px;row-gap:12px}
-.fsps.one{grid-template-columns:minmax(0,190px);justify-content:center}
-.fsp{display:flex;flex-direction:column;gap:4px;min-width:0}
-.fsp .fwed{margin:0 auto}
-.fkids.top{margin-top:4px}
 .flines path{fill:none;stroke-width:2;stroke-linecap:round}
 .flines .l{stroke:var(--muted);opacity:.55} .flines .ld{stroke:var(--muted);opacity:.45;stroke-dasharray:4 4}
 .flines .w{stroke:var(--gold);stroke-width:4} .flines .wd{stroke:var(--gold);stroke-width:3;stroke-dasharray:6 4}
-.fgps,.fcpl,.fkids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:12px}
+.fgps,.fcpl,.fkids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:12px;position:relative}
 .fgps.one,.fcpl.one{grid-template-columns:minmax(0,190px);justify-content:center}
 .fgps{margin-bottom:22px}
 .fgpc{display:flex;flex-direction:column;gap:8px;align-items:stretch}
@@ -164,6 +157,8 @@ main.famon #stage,main.famon .zoom,main.famon #bLegend,main.famon #legend{displa
 button.fcard:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .fcard.small{padding:5px 8px;border-width:2px}
 .fcard.small .fn{font-size:.86rem}
+.fcard.self{background:var(--bg);cursor:default;border-style:solid}
+.fcard.self .fs{font-weight:700}
 .fcard.fph{border-style:dashed;border-color:var(--line);background:none;color:var(--muted);font:600 .86rem "Assistant",sans-serif;min-height:44px}
 .fmore{font-size:.72rem;font-weight:700;color:var(--muted);background:var(--bg);border-radius:999px;padding:1px 8px;margin-top:3px}
 .fcard.me{padding:14px 14px 12px;box-shadow:var(--shadow);border-width:3px}
@@ -1270,8 +1265,7 @@ function famGo(id,push=true,from=null){
 function flyFrom(el,r0){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches||!el.animate) return;
   const r=el.getBoundingClientRect(); if(!r.width) return;
-  const a=el.animate([{transformOrigin:'0 0',transform:`translate(${r0.left-r.left}px,${r0.top-r.top}px) scale(${r0.width/r.width},${r0.height/r.height})`},{transformOrigin:'0 0',transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.8,.2,1)'});
-  famFlying=a; a.onfinish=a.oncancel=()=>{ if(famFlying===a){ famFlying=null; drawFamLines(); } };
+  el.animate([{transformOrigin:'0 0',transform:`translate(${r0.left-r.left}px,${r0.top-r.top}px) scale(${r0.width/r.width},${r0.height/r.height})`},{transformOrigin:'0 0',transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.8,.2,1)'});
   const rest=[...fBody.children]; rest.forEach(b=>b.animate([{opacity:.25},{opacity:1}],{duration:320,easing:'ease-out'}));
 }
 const kidsN=x=>unionsOf(x).reduce((n,u)=>n+u.children.length,0);
@@ -1301,30 +1295,28 @@ function renderFam(anim){
         <span class="ftap">לחיצה לפרטים</span>
       </button></div>`;
   let h='';
-  // 1. parents, with their parents above them
-  const nCol=pars.length?2:1, gpOf=pars.map(x=>parentsOf(x));
-  h+=`<section class="fbox"><h3 class="fh">${pu&&pu.adopted.includes(id)?'הורים מאמצים':'הורים'}</h3>`;
-  if(gpOf.some(g=>g.length)) h+=`<div class="fgps ${nCol===1?'one':''}">${pars.map((x,i)=>`<div class="fgpc" data-to="${x}">${gpOf[i].map(g=>fcard(g,'small','',fmore(g,true))).join('')}</div>`).join('')}${pars.length===1?'<div class="fgpc"></div>':''}</div>`;
-  h+=`<div class="fcpl ${nCol===1?'one':''} ${pu&&pu.end==='divorce'?'div':''}" data-k="par">${pars.map(x=>fcard(x)).join('')}${pars.length<2?fph('data-fa="parent"','הוספת הורה'):''}</div>`;
+  // 1. parents (and their parents) with all their children: the person and the siblings
+  const cols=[...pars], nCol=pars.length?2:1;
+  const gpOf=pars.map(x=>parentsOf(x));
+  h+=`<section class="fbox">${pars.length?`<h3 class="fh">${pu&&pu.adopted.includes(id)?'הורים מאמצים ואחים':'הורים ואחים'}</h3>`:''}`;
+  if(gpOf.some(g=>g.length)) h+=`<div class="fgps ${nCol===1?'one':''}">${cols.map((x,i)=>`<div class="fgpc" data-to="${x}">${gpOf[i].map(g=>fcard(g,'small','',fmore(g,true))).join('')}</div>`).join('')}${pars.length===1?'<div class="fgpc"></div>':''}</div>`;
+  h+=`<div class="fcpl ${nCol===1?'one':''} ${pu&&pu.end==='divorce'?'div':''}">${pars.map(x=>fcard(x)).join('')}${pars.length<2?fph('data-fa="parent"','הוספת הורה'):''}</div>`;
   if(pu&&pu.b&&unionNote(pu)) h+=`<div class="fwed">${esc(unionNote(pu))}</div>`;
-  h+='</section>';
-  // 2. the person among the siblings; the spouses right under the person
-  const sps=myU.filter(u=>u.b);
-  const meBlk=`<div class="fmeblk">${meCard}${sps.length?`<div class="fsps ${sps.length===1?'one':''}">${sps.map(u=>{ const o=other(u,id);
-      return `<div class="fsp" data-div="${u.end==='divorce'?1:''}">${fcard(o,'','',fmore(o,true))}<div class="fwed">${esc(unionNote(u)||(u.end==='divorce'?'גרושים':people[o].g==='f'?'אשתו':'בעלה'))}</div></div>`; }).join('')}</div>`:''}</div>`;
   const sibKids=pu?pu.children:[id];
-  h+=`<section class="fbox">${sibKids.length>1?'<h3 class="fh">אחים</h3>':''}<div class="fkids top" data-k="sib">${sibKids.map(c=>c===id?meBlk:fcard(c,'',pu&&pu.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${pars.length?fph('data-fa="sibling"','אח או אחות'):''}</div></section>`;
-  // 3. half-siblings, grouped by the shared parent
+  h+=`<div class="fkids">${sibKids.map(c=>c===id?meCard:fcard(c,'',pu&&pu.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${pars.length?fph('data-fa="sibling"','אח או אחות'):''}</div></section>`;
+  // 2. half-siblings, grouped by the shared parent
   let half='';
   for(const par of pars) for(const u of unionsOf(par)) if(u!==pu&&u.children.length){ const o=other(u,par);
     half+=`<div class="fh4">ילדים של ${esc(people[par].first)}${o?' ו'+esc(people[o].first):''}</div>${u.children.map(c=>fcard(c,'','',fmore(c))).join('')}`; }
   if(half) h+=`<section class="fbox"><h3 class="fh">אחים למחצה</h3><div class="fkids nl">${half}</div></section>`;
-  // 4. children, one box per couple; the parents are not repeated
-  const kidUs=myU.filter(u=>u.children.length||u.b);
-  for(const u of kidUs){ const o=other(u,id);
-    h+=`<section class="fbox"><h3 class="fh">${o?`הילדים עם ${esc(people[o].first)}`:'ילדים'}</h3>
-      <div class="fkids top" data-k="kids">${u.children.map(c=>fcard(c,'',u.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${o?fph(`data-fu="${u.id}"`,'ילד'):fph('data-fa="kids"','ילד')}</div></section>`; }
-  h+=`<div class="fends"><button class="fadd" data-fa="spouse">+ ${p.g==='f'?'בן זוג':'בת זוג'}</button>${kidUs.some(u=>u.children.length)?'':'<button class="fadd" data-fa="kids">+ ילדים</button>'}</div>`;
+  // 3. each marriage with its children
+  for(const u of myU){ const o=other(u,id); if(!o&&!u.children.length) continue;
+    const self=`<div class="fcard self ${p.g}"><span class="fn">${esc(fullName(p))}</span></div>`;
+    h+=`<section class="fbox"><h3 class="fh">${o?`המשפחה עם ${esc(people[o].first)}`:'ילדים'}</h3>
+      <div class="fcpl ${o?'':'one'} ${u.end==='divorce'?'div':''}">${self}${o?fcard(o,'','',fmore(o,true)):''}</div>
+      ${o&&unionNote(u)?`<div class="fwed">${esc(unionNote(u))}</div>`:''}
+      <div class="fkids">${u.children.map(c=>fcard(c,'',u.adopted.includes(c)?(people[c].g==='f'?'מאומצת':'מאומץ'):'',fmore(c))).join('')}${o?fph(`data-fu="${u.id}"`,'ילד'):fph('data-fa="kids"','ילד')}</div></section>`; }
+  h+=`<div class="fends"><button class="fadd" data-fa="spouse">+ ${p.g==='f'?'בן זוג':'בת זוג'}</button>${myU.some(u=>u.children.length)?'':'<button class="fadd" data-fa="kids">+ ילדים</button>'}</div>`;
   fBody.innerHTML=h;
   if(anim){ fBody.classList.remove('anim'); void fBody.offsetWidth; fBody.classList.add('anim'); }
   fBody.querySelectorAll('button[data-f]').forEach(b=>b.onclick=()=>{ if(b.dataset.f!==famId) famGo(b.dataset.f,true,b.getBoundingClientRect()); });
@@ -1343,51 +1335,35 @@ function renderFam(anim){
   drawFamLines();
 }
 // קווים כמו בעץ: קו נישואין זהוב בין בני הזוג, ומהאמצע שלו "גזע" שיורד לכל הילדים
-let famFlying=null; // lines are measured from the cards, so wait until the flying card lands
 function drawFamLines(){
-  if(famFlying) return;
-  let svg=fBody.querySelector(':scope>.flines');
-  if(!svg){ fBody.insertAdjacentHTML('afterbegin','<svg class="flines" aria-hidden="true"><path class="l"/><path class="ld"/><path class="w"/><path class="wd"/></svg>'); svg=fBody.firstElementChild; }
-  const B=fBody.getBoundingClientRect(), R=e=>{ const r=e.getBoundingClientRect(); return {l:r.left-B.left,r:r.right-B.left,t:r.top-B.top,b:r.bottom-B.top,cx:(r.left+r.right)/2-B.left,cy:(r.top+r.bottom)/2-B.top,ph:e.classList.contains('fph'),blk:e.classList.contains('fmeblk')}; };
-  const P={l:'',ld:'',w:'',wd:''}, f=n=>Math.round(n*10)/10;
-  // a trunk from (tx,ty) down to each child, with a short arm to the child's side
-  function trunk(tx,ty,kids,dash){
-    let endReal=ty, endAll=ty;
-    const gaps=kids.filter(k=>k.l<tx-2&&k.r>tx+2).map(k=>[k.t,k.b]); // the line goes around full-width cards, not through them
-    const V=(c,a,b)=>{ let y=a; for(const [t,bt] of gaps){ if(bt<=y||t>=b) continue; if(t>y) P[c]+=`M${f(tx)},${f(y)}V${f(t)}`; y=Math.max(y,bt); } if(b>y) P[c]+=`M${f(tx)},${f(y)}V${f(b)}`; };
-    for(const k of kids){ const span=k.l<tx-2&&k.r>tx+2, y=span?k.t:k.cy; endAll=Math.max(endAll,y); if(!k.ph) endReal=Math.max(endReal,y);
-      if(!span) P[k.ph||dash?'ld':'l']+=`M${f(tx)},${f(k.cy)}H${f(k.r<tx?k.r:k.l)}`; }
-    if(!dash&&endReal>ty) V('l',ty,endReal);
-    const from=dash?ty:endReal; if(endAll>from) V('ld',from,endAll);
-  }
-  // grandparents: a short marriage line between them, and a line down to their child
-  for(const c of fBody.querySelectorAll('.fgpc[data-to]')){
-    const g=[...c.children].map(R); if(!g.length) continue;
-    const to=fBody.querySelector(`.fcpl [data-f="${c.dataset.to}"]`); if(!to) continue; const t=R(to), x=(g[0].l+g[0].r)/2;
-    if(g.length>1) P.w+=`M${f(x)},${f(g[0].b)}V${f(g[1].t)}`;
-    P.l+=`M${f(x)},${f(g[g.length-1].b)}V${f((g[g.length-1].b+t.t)/2)}H${f(t.cx)}V${f(t.t)}`;
-  }
-  // parents -> the person and the siblings (the line crosses between the boxes)
-  const cpl=fBody.querySelector('.fcpl[data-k="par"]'), sib=fBody.querySelector('.fkids[data-k="sib"]');
-  if(cpl&&sib){
-    const cs=[...cpl.children].map(R); let tx,ty; const dash=!cs.some(c=>!c.ph);
+  for(const box of fBody.querySelectorAll('.fbox')){
+    let svg=box.querySelector(':scope>.flines');
+    if(!svg){ box.insertAdjacentHTML('afterbegin','<svg class="flines" aria-hidden="true"><path class="l"/><path class="ld"/><path class="w"/><path class="wd"/></svg>'); svg=box.firstElementChild; }
+    const B=box.getBoundingClientRect(), R=e=>{ const r=e.getBoundingClientRect(); return {l:r.left-B.left,r:r.right-B.left,t:r.top-B.top,b:r.bottom-B.top,cx:(r.left+r.right)/2-B.left,cy:(r.top+r.bottom)/2-B.top}; };
+    const P={l:'',ld:'',w:'',wd:''}, f=n=>Math.round(n*10)/10;
+    // grandparents: a short marriage line between them, and a line down to their child
+    for(const c of box.querySelectorAll('.fgpc[data-to]')){
+      const g=[...c.children].map(R); if(!g.length) continue;
+      const to=box.querySelector(`.fcpl [data-f="${c.dataset.to}"]`); if(!to) continue; const t=R(to), x=(g[0].l+g[0].r)/2;
+      if(g.length>1) P.w+=`M${f(x)},${f(g[0].b)}V${f(g[1].t)}`;
+      P.l+=`M${f(x)},${f(g[g.length-1].b)}V${f((g[g.length-1].b+t.t)/2)}H${f(t.cx)}V${f(t.t)}`;
+    }
+    const cpl=box.querySelector(':scope>.fcpl'), kidsEl=box.querySelector(':scope>.fkids:not(.nl)'); if(!cpl) continue;
+    const cs=[...cpl.children].map(e=>({...R(e),ph:e.classList.contains('fph')}));
+    let tx,ty,dash=!cs.some(c=>!c.ph);
     if(cs.length===2){ const [a,b]=cs.sort((x,y)=>x.l-y.l), y=f((a.cy+b.cy)/2);
       if(!a.ph&&!b.ph) P[cpl.classList.contains('div')?'wd':'w']+=`M${f(a.r)},${y}H${f(b.l)}`; else P.ld+=`M${f(a.r)},${y}H${f(b.l)}`;
       tx=(a.r+b.l)/2; ty=y; }
-    else { tx=cs[0].cx; ty=cs[0].b; }
-    trunk(tx,ty,[...sib.children].map(R),dash);
+    else if(cs.length===1){ tx=cs[0].cx; ty=cs[0].b; }
+    if(tx==null||!kidsEl) continue;
+    const ks=[...kidsEl.children].map(e=>({...R(e),ph:e.classList.contains('fph')}));
+    let endReal=ty, endAll=ty;
+    for(const k of ks){ const span=k.l<tx-2&&k.r>tx+2, y=span?k.t:k.cy; endAll=Math.max(endAll,y); if(!k.ph) endReal=Math.max(endReal,y);
+      if(!span) P[k.ph||dash?'ld':'l']+=`M${f(tx)},${f(k.cy)}H${f(k.r<tx?k.r:k.l)}`; }
+    if(!dash&&endReal>ty) P.l+=`M${f(tx)},${f(ty)}V${f(endReal)}`;
+    if(endAll>(dash?ty:endReal)) P.ld+=`M${f(tx)},${f(dash?ty:endReal)}V${f(endAll)}`;
+    const ps=svg.querySelectorAll('path'); ps[0].setAttribute('d',P.l); ps[1].setAttribute('d',P.ld); ps[2].setAttribute('d',P.w); ps[3].setAttribute('d',P.wd);
   }
-  // the person -> each spouse (gold; dashed after a divorce)
-  const me=fBody.querySelector('.fcard.me'), sp=[...fBody.querySelectorAll('.fsp')];
-  if(me&&sp.length){ const m=R(me), cards=sp.map(e=>({...R(e.querySelector('.fcard')),div:!!e.dataset.div})), y=(m.b+Math.min(...cards.map(c=>c.t)))/2;
-    P[cards.every(c=>c.div)?'wd':'w']+=`M${f(m.cx)},${f(m.b)}V${f(y)}`;
-    for(const c of cards) P[c.div?'wd':'w']+=`M${f(m.cx)},${f(y)}H${f(c.cx)}V${f(c.t)}`; }
-  // each couple's children: a trunk from under the heading
-  for(const k of fBody.querySelectorAll('.fkids[data-k="kids"]')){
-    const g=R(k), kids=[...k.children].map(R); if(!kids.length) continue;
-    trunk((g.l+g.r)/2,g.t-8,kids,!kids.some(x=>!x.ph));
-  }
-  const ps=svg.querySelectorAll('path'); ps[0].setAttribute('d',P.l); ps[1].setAttribute('d',P.ld); ps[2].setAttribute('d',P.w); ps[3].setAttribute('d',P.wd);
 }
 if(window.ResizeObserver) new ResizeObserver(()=>{ if(!famEl.hidden) requestAnimationFrame(drawFamLines); }).observe(fBody);
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(!famEl.hidden) drawFamLines(); });
